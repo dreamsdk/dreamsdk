@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="11"/>
+    <PathDelim Value="\"/>
+    <General>
+      <Flags>
+        <MainUnitHasCreateFormStatements Value="False"/>
+        <MainUnitHasScaledStatement Value="False"/>
+      </Flags>
+      <SessionStorage Value="InProjectDir"/>
+      <MainUnit Value="0"/>
+      <Title Value="Code::Blocks Patcher Helper"/>
+      <UseAppBundle Value="False"/>
+      <ResourceType Value="res"/>
+      <UseXPManifest Value="True"/>
+      <XPManifest>
+        <ExecutionLevel Value="requireAdministrator"/>
+        <TextName Value="DreamSDK.CodeBlocks.Patcher.Helper"/>
+        <TextDesc Value="Code::Blocks Patcher Helper for DreamSDK Setup"/>
+      </XPManifest>
+    </General>
+    <VersionInfo>
+      <UseVersionInfo Value="True"/>
+      <AutoIncrementBuild Value="True"/>
+      <MajorVersionNr Value="1"/>
+      <BuildNr Value="12"/>
+      <StringTable Comments="http://dreamsdk.org/" CompanyName="The DreamSDK Team" FileDescription="Code::Blocks Patcher Helper for DreamSDK Setup" InternalName="cbhelper" LegalCopyright="© Copyleft 2018-2020" LegalTrademarks="Code::Blocks is distributed under the GNU GPL3. Sega and Dreamcast are registered trademark of Sega Games Co., Ltd." OriginalFilename="cbhelper.exe" ProductName="DreamSDK" ProductVersion="3.0.4.2001"/>
+    </VersionInfo>
+    <BuildModes Count="2">
+      <Item1 Name="Debug" Default="True"/>
+      <Item2 Name="Release">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <Target>
+            <Filename Value="..\bin\cbhelper"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <OtherUnitFiles Value="..\..\..\..\common\src\sys;..\..\..\..\common\src;..\..\..\codeblocks\cbpatcher\src\engine"/>
+            <UnitOutputDirectory Value="..\lib\$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <TargetCPU Value="i386"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-dRELEASE -dLITE_VERSION"/>
+          </Other>
+        </CompilerOptions>
+      </Item2>
+    </BuildModes>
+    <PublishOptions>
+      <Version Value="2"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <CommandLineParams Value="--operation=install --verbose"/>
+      </local>
+      <FormatVersion Value="2"/>
+      <Modes Count="1">
+        <Mode0 Name="default">
+          <local>
+            <CommandLineParams Value="--operation=install --verbose"/>
+          </local>
+        </Mode0>
+      </Modes>
+    </RunParams>
+    <RequiredPackages Count="1">
+      <Item1>
+        <PackageName Value="LazUtils"/>
+      </Item1>
+    </RequiredPackages>
+    <Units Count="1">
+      <Unit0>
+        <Filename Value="cbhelper.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="CodeBlocksHelper"/>
+      </Unit0>
+    </Units>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11"/>
+    <PathDelim Value="\"/>
+    <Target>
+      <Filename Value="..\bin\cbhelper"/>
+    </Target>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value="..\..\..\..\common\src\sys;..\..\..\..\common\src;..\..\..\codeblocks\cbpatcher\src\engine"/>
+      <UnitOutputDirectory Value="..\lib\$(TargetCPU)-$(TargetOS)"/>
+    </SearchPaths>
+    <Parsing>
+      <SyntaxOptions>
+        <IncludeAssertionCode Value="True"/>
+      </SyntaxOptions>
+    </Parsing>
+    <CodeGeneration>
+      <Checks>
+        <IOChecks Value="True"/>
+        <RangeChecks Value="True"/>
+        <OverflowChecks Value="True"/>
+        <StackChecks Value="True"/>
+      </Checks>
+      <VerifyObjMethodCallValidity Value="True"/>
+      <TargetCPU Value="i386"/>
+      <Optimizations>
+        <OptimizationLevel Value="0"/>
+      </Optimizations>
+    </CodeGeneration>
+    <Linking>
+      <Debugging>
+        <DebugInfoType Value="dsDwarf2Set"/>
+        <UseHeaptrc Value="True"/>
+        <TrashVariables Value="True"/>
+        <UseExternalDbgSyms Value="True"/>
+      </Debugging>
+    </Linking>
+    <Other>
+      <Verbosity>
+        <ShowDebugInfo Value="True"/>
+        <ShowUsedFiles Value="True"/>
+      </Verbosity>
+      <CustomOptions Value="-dDEBUG -dLITE_VERSION"/>
+    </Other>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions Count="3">
+      <Item1>
+        <Name Value="EAbort"/>
+      </Item1>
+      <Item2>
+        <Name Value="ECodetoolError"/>
+      </Item2>
+      <Item3>
+        <Name Value="EFOpenError"/>
+      </Item3>
+    </Exceptions>
+  </Debugging>
+</CONFIG>
