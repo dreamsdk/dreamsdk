@@ -72,3 +72,6 @@ lib/
 *.lps
 *.dbg
 *.conf
+
+# Misc
+*.log

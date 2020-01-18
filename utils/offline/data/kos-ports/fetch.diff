@@ -1,0 +1,49 @@
+diff -ruN kos-ports/config.mk kos-ports-offline/config.mk
+--- kos-ports/config.mk	2020-01-18 12:43:57 +0000
++++ kos-ports-offline/config.mk	2020-01-18 16:31:13 +0000
+@@ -1,7 +1,7 @@
+ # Select how to download files inside the kos-ports tree. Examples are given for
+ # cURL and wget.
+-FETCH_CMD = curl --progress-bar -O
+-#FETCH_CMD = wget --progress=bar
++#FETCH_CMD = curl --progress-bar -O
++FETCH_CMD = wget --progress=bar --no-check-certificate
+ 
+ # Set the command that will be used for extracting archive files. Currently this
+ # only must extract .tar.gz archives (although the default will handle more than
+diff -ruN kos-ports/scripts/download.mk kos-ports-offline/scripts/download.mk
+--- kos-ports/scripts/download.mk	2020-01-18 12:44:11 +0000
++++ kos-ports-offline/scripts/download.mk	2020-01-18 16:32:49 +0000
+@@ -53,9 +53,9 @@
+ 			if [ ! -d "${PORTNAME}-${PORTVERSION}" ] ; then \
+ 				echo "Fetching ${PORTNAME} from ${SVN_REPOSITORY} ..." ; \
+ 				if [ -n "${SVN_REVISION}" ] ; then \
+-					svn checkout ${SVN_REPOSITORY} -r ${SVN_REVISION} ${PORTNAME}-${PORTVERSION} ; \
++					svn checkout --non-interactive --trust-server-cert ${SVN_REPOSITORY} -r ${SVN_REVISION} ${PORTNAME}-${PORTVERSION} ; \
+ 				else \
+-					svn checkout ${SVN_REPOSITORY} ${PORTNAME}-${PORTVERSION} ; \
++					svn checkout --non-interactive --trust-server-cert ${SVN_REPOSITORY} ${PORTNAME}-${PORTVERSION} ; \
+ 				fi ; \
+ 			else \
+ 				echo "Updating ${PORTNAME} from ${SVN_REPOSITORY} ..." ; \
+diff -ruN kos-ports/utils/fetch-all.sh kos-ports-offline/utils/fetch-all.sh
+--- kos-ports/utils/fetch-all.sh	1970-01-01 00:00:00 +0000
++++ kos-ports-offline/utils/fetch-all.sh	2020-01-18 12:53:10 +0000
+@@ -0,0 +1,17 @@
++#!/bin/sh
++# kos-ports ##version##
++#
++# utils/clean-all.mk
++# Copyright (C) 2015 Lawrence Sebald
++#
++
++cd ${KOS_PORTS}
++
++for _dir in ${KOS_PORTS}/* ; do
++    if [ -d "${_dir}" ] ; then
++        if [ -f "${_dir}/Makefile" ] ; then
++            echo "Fetching in ${_dir}..."
++            ${KOS_MAKE} -C "${_dir}" fetch
++        fi
++    fi
++done

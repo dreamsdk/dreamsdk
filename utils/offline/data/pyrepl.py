@@ -11,7 +11,7 @@ stext = sys.argv[1]
 rtext = sys.argv[2]
 path = sys.argv[3]
 
-print "finding: \"" + stext + "\", replacing with \"" + rtext + "\", in: \"" + path + "\""
+#print "finding: \"" + stext + "\", replacing with \"" + rtext + "\", in: \"" + path + "\""
 
 for dname, dirs, files in os.walk(path):
     for fname in files:

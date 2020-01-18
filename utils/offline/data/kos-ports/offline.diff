@@ -1,6 +1,6 @@
 diff -ruN kos-ports/scripts/clean.mk kos-ports-offline/scripts/clean.mk
---- kos-ports/scripts/clean.mk	2020-01-17 18:41:14 +0000
-+++ kos-ports-offline/scripts/clean.mk	2020-01-17 19:45:39 +0000
+--- kos-ports/scripts/clean.mk	2020-01-18 12:44:11 +0000
++++ kos-ports-offline/scripts/clean.mk	2020-01-18 16:39:33 +0000
 @@ -5,8 +5,9 @@
  #
  
