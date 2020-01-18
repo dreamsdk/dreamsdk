@@ -76,14 +76,13 @@ rem Cleaning up all
 set CLEAN_ALL=%KOS_PORTS_UTILS_DIR%\clean-all.sh
 call :win2unix CLEAN_ALL
 %RUNNER% %CLEAN_ALL% >> %LOG_FILE% 2>&1
+call :wait
 
 rem Downloading all
 set FETCH_ALL=%KOS_PORTS_UTILS_DIR%\fetch-all.sh
 call :win2unix FETCH_ALL
 %RUNNER% %FETCH_ALL% >> %LOG_FILE% 2>&1
-
-rem Waiting for download completion
-%RUNNER% "sleep 3"
+call :wait
 
 rem Copy everything
 call :copy %KOS_PORTS_INPUT_DIR% %KOS_PORTS_OUTPUT_DIR% %VERSION_KOS_PORTS%
@@ -191,4 +190,8 @@ goto :EOF
 :logempty
 echo.
 echo.>> %LOG_FILE% 2>&1
+goto :EOF
+
+:wait
+%RUNNER% "sleep 3"
 goto :EOF
