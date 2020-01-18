@@ -47,6 +47,7 @@ set KOS_PORTS_DIR=%HOME_BASE%\kos-ports
 set KOS_PORTS_EXTRA_DIR=%HOME_EXTRA%\kos-ports
 set KOS_PORTS_PATCH_FILE=%BASE_DIR%\data\kos-ports.diff
 %PATCH% -N -d %KOS_PORTS_DIR% -p1 -r - < %KOS_PORTS_PATCH_FILE% > nul
+xcopy %KOS_PORTS_EXTRA_DIR%\* %KOS_PORTS_DIR% /s /i /y > nul
 %PYREPL% "# kos-ports ##version##" "# kos-ports %VERSION_KOS_PORTS%-offline" "%KOS_PORTS_DIR%" > nul
 echo %VERSION_KOS_PORTS% > %KOS_PORTS_EXTRA_DIR%\OFFLINE
 
