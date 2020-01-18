@@ -16,6 +16,7 @@ print "finding: \"" + stext + "\", replacing with \"" + rtext + "\", in: \"" + p
 for dname, dirs, files in os.walk(path):
     for fname in files:
         fpath = os.path.join(dname, fname)
+        print fpath
         with open(fpath) as f:
             s = f.read()
         s = s.replace(stext, rtext)
