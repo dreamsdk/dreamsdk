@@ -58,6 +58,7 @@ call :log Processing: KallistiOS (%VERSION_KOS%)
 call :copy %KOS_INPUT_DIR% %KOS_OUTPUT_DIR% %VERSION_KOS%
 if exist %KOS_OUTPUT_DIR%\%KOS_ENVIRON% del %KOS_OUTPUT_DIR%\%KOS_ENVIRON%
 call :setver "KallistiOS ##version##" "KallistiOS %VERSION_KOS%" "%KOS_OUTPUT_DIR%"
+call :setver "relver='##version##'" "relver='%VERSION_KOS%'" "%KOS_OUTPUT_DIR%\kernel\arch\dreamcast\kernel"
 goto kosports
 
 rem KallistiOS Ports
@@ -159,7 +160,7 @@ endlocal & set %1=%tmpgetver%
 goto :EOF
 
 :setver
-%PYREPL% "%1" "%2" "%3%" >> %LOG_FILE% 2>&1
+%PYREPL% %1 %2 %3%
 goto :EOF
 
 :win2unix

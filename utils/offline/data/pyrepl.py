@@ -16,7 +16,7 @@ path = sys.argv[3]
 for dname, dirs, files in os.walk(path):
     for fname in files:
         fpath = os.path.join(dname, fname)
-        print fpath
+#        print fpath
         with open(fpath) as f:
             s = f.read()
         s = s.replace(stext, rtext)
