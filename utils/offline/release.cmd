@@ -71,7 +71,7 @@ call :log Processing: KallistiOS Ports (%VERSION_KOS_PORTS%)
 
 rem Download all KallistiOS Ports at once
 call :patch %KOS_PORTS_INPUT_DIR% %KOS_PORTS_PATCH_DIR%\fetch.diff
-if not exist %KOS_INPUT_DIR%\%KOS_ENVIRON% copy "%KOS_INPUT_DIR%\doc\environ.sh.sample" "%KOS_INPUT_DIR%\%KOS_ENVIRON%"
+if not exist %KOS_INPUT_DIR%\%KOS_ENVIRON% copy "%KOS_INPUT_DIR%\doc\environ.sh.sample" "%KOS_INPUT_DIR%\%KOS_ENVIRON%" > nul
 
 rem Cleaning up all
 set CLEAN_ALL=%KOS_PORTS_UTILS_DIR%\clean-all.sh
