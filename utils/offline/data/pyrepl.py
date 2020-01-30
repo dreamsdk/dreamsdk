@@ -4,7 +4,8 @@ import fileinput, glob, string, sys, os, mimetypes
 from os.path import join
 
 def is_text_file(fpath):
-    return mimetypes.guess_type(fpath)[0] == 'text/plain'
+    ftype = mimetypes.guess_type(fpath)[0]
+    return ftype in ['application/x-sh', 'text/plain']
 	   
 if len(sys.argv) < 3:
     print "usage: %s <search_text> <replace_text> <directory>" % os.path.basename(sys.argv[0])
