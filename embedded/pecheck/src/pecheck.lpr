@@ -58,8 +58,6 @@ var
   ProgramName: string;
   FileName: TFileName;
 
-{$R *.res}
-
 begin
   ProgramName := GetProgramName;
   if ParamCount < 1 then
