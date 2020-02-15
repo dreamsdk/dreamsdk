@@ -11,42 +11,43 @@ uses
   CustApp,
   FSTools,
   SysTools,
-  CBPatch;
+  CBTools;
 
 type
   { TCodeBlocksHelperApplication }
   TCodeBlocksHelperApplication = class(TCustomApplication)
-  private
-    fCodeBlocksPatcher: TCodeBlocksPatcher;
   protected
     procedure DoRun; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    property Patcher: TCodeBlocksPatcher
-      read fCodeBlocksPatcher;
   end;
 
 procedure TCodeBlocksHelperApplication.DoRun;
 var
+  AvailableUsers: TStringList;
   i: Integer;
 
 begin
-  for i := 0 to fCodeBlocksPatcher.Settings.AvailableUsers.Count - 1 do
-    WriteLn(fCodeBlocksPatcher.Settings.AvailableUsers[i]);
-  Terminate;
+  AvailableUsers := TStringList.Create;
+  try
+    GetCodeBlocksAvailableUsers(AvailableUsers);
+    for i := 0 to AvailableUsers.Count - 1 do
+      WriteLn(AvailableUsers[i]);
+    Terminate;
+  finally
+    AvailableUsers.Free;
+  end;
 end;
 
 constructor TCodeBlocksHelperApplication.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   StopOnException := True;
-  fCodeBlocksPatcher := TCodeBlocksPatcher.Create;
 end;
 
 destructor TCodeBlocksHelperApplication.Destroy;
 begin
-  fCodeBlocksPatcher.Free;
   inherited Destroy;
 end;
 
