@@ -32,8 +32,8 @@ var
   i: Integer;
 
 begin
-  for i := 0 to fCodeBlocksPatcher.CodeBlocksAvailableUsers.Count - 1 do
-    WriteLn(fCodeBlocksPatcher.CodeBlocksAvailableUsers[i]);
+  for i := 0 to fCodeBlocksPatcher.Settings.AvailableUsers.Count - 1 do
+    WriteLn(fCodeBlocksPatcher.Settings.AvailableUsers[i]);
   Terminate;
 end;
 
@@ -58,7 +58,7 @@ var
 begin
   Application := TCodeBlocksHelperApplication.Create(nil);
   try
-  Application.Title:='Code::Blocks Patcher Helper';
+    Application.Title := 'Code::Blocks Patcher Helper';
     Application.Run;
   finally
     Application.Free;
