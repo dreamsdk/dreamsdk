@@ -3,15 +3,15 @@ set APP_TITLE=KallistiOS Offline Packager for DreamSDK Setup
 title %APP_TITLE%
 cls
 
-set LOG_FILE=release.log
+rem Initialization
+set BASE_DIR=%~dp0
+set BASE_DIR=%BASE_DIR:~0,-1%
+
+set LOG_FILE=%BASE_DIR%\release.log
 if exist %LOG_FILE% del %LOG_FILE%
 
 call :log %APP_TITLE%
 call :log
-
-rem Initialization
-set BASE_DIR=%~dp0
-set BASE_DIR=%BASE_DIR:~0,-1%
 
 rem Read Configuration
 set CONFIG_FILE=%BASE_DIR%\release.ini
@@ -71,17 +71,11 @@ call :log Processing: KallistiOS Ports (%VERSION_KOS_PORTS%)
 
 rem Download all KallistiOS Ports at once
 call :patch %KOS_PORTS_INPUT_DIR% %KOS_PORTS_PATCH_DIR%\fetch.diff
-if not exist %KOS_INPUT_DIR%\%KOS_ENVIRON% copy "%KOS_INPUT_DIR%\doc\environ.sh.sample" "%KOS_INPUT_DIR%\%KOS_ENVIRON%" > nul
-
-rem Cleaning up all
-set CLEAN_ALL=%KOS_PORTS_UTILS_DIR%\clean-all.sh
-call :win2unix CLEAN_ALL
-%RUNNER% %CLEAN_ALL% >> %LOG_FILE% 2>&1
-call :wait
 
 rem Downloading all
 set FETCH_ALL=%KOS_PORTS_UTILS_DIR%\fetch-all.sh
 call :win2unix FETCH_ALL
+cd /D %KOS_PORTS_UTILS_DIR%
 %RUNNER% %FETCH_ALL% >> %LOG_FILE% 2>&1
 call :wait
 
@@ -142,7 +136,11 @@ set tempvar=%*
 goto :EOF
 
 :copy
-xcopy %1\* %2 /s /i /y >> %LOG_FILE% 2>&1
+set EXCLUDE_FILE=%BASE_DIR%\exclude.txt
+echo .git\ > %EXCLUDE_FILE%
+echo .svn\ >> %EXCLUDE_FILE%
+xcopy %1\* %2 /exclude:%EXCLUDE_FILE% /s /i /y >> %LOG_FILE% 2>&1
+if exist %EXCLUDE_FILE% del %EXCLUDE_FILE%
 echo %3 > %2\OFFLINE
 goto :EOF
 
