@@ -59,6 +59,8 @@ call :copy %KOS_INPUT_DIR% %KOS_OUTPUT_DIR% %VERSION_KOS%
 if exist %KOS_OUTPUT_DIR%\%KOS_ENVIRON% del %KOS_OUTPUT_DIR%\%KOS_ENVIRON%
 call :setver "KallistiOS ##version##" "KallistiOS %VERSION_KOS%" "%KOS_OUTPUT_DIR%"
 call :setver "relver='##version##'" "relver='%VERSION_KOS%'" "%KOS_OUTPUT_DIR%\kernel\arch\dreamcast\kernel"
+call :setver "##version##" "%VERSION_KOS%" "%KOS_OUTPUT_DIR%\doc"
+call :setver "##version##" "%VERSION_KOS%" "%KOS_OUTPUT_DIR%\kernel\arch\dreamcast\hardware\pvr"
 goto kosports
 
 rem KallistiOS Ports
@@ -84,6 +86,8 @@ call :copy %KOS_PORTS_INPUT_DIR% %KOS_PORTS_OUTPUT_DIR% %VERSION_KOS_PORTS%
 call :patch %KOS_PORTS_OUTPUT_DIR% %KOS_PORTS_PATCH_DIR%\offline.diff
 call :patchreverse %KOS_PORTS_OUTPUT_DIR% %KOS_PORTS_PATCH_DIR%\fetch.diff
 call :setver "kos-ports ##version##" "kos-ports %VERSION_KOS_PORTS%" "%KOS_PORTS_OUTPUT_DIR%"
+call :setver "KallistiOS ##version##" "KallistiOS %VERSION_KOS_PORTS%" "%KOS_PORTS_OUTPUT_DIR%"
+call :setver "KOS ##version##" "KOS %VERSION_KOS_PORTS%" "%KOS_PORTS_OUTPUT_DIR%"
 goto dcload
 
 rem Dreamcast-Tool

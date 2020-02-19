@@ -1,11 +1,17 @@
 # http://code.activestate.com/recipes/277753-find-and-replace-string-in-all-files-in-a-director/
 
 import fileinput, glob, string, sys, os, mimetypes
-from os.path import join
 
 def is_text_file(fpath):
-    ftype = mimetypes.guess_type(fpath)[0]
-    return ftype in ['application/x-sh', 'text/plain']
+	base = os.path.basename(fpath)
+	radical = os.path.splitext(base)[0]
+	filename, file_extension = os.path.splitext(fpath)
+	ftype = mimetypes.guess_type(fpath)[0]
+	file_extension = file_extension.lower()
+	radical = radical.lower()
+	return (ftype in ['application/x-sh', 'text/plain']) or \
+		(file_extension in ['.mk', '.cpp', '.s', '.awk']) or \
+		(radical in ['makefile', 'doxyfile', 'readme', 'faq', 'relnotes'])
 	   
 if len(sys.argv) < 3:
     print "usage: %s <search_text> <replace_text> <directory>" % os.path.basename(sys.argv[0])
@@ -24,3 +30,4 @@ for dname, dirs, files in os.walk(path):
             s = s.replace(stext, rtext)
             with open(fpath, "w") as f:
                 f.write(s)
+				
