@@ -23,7 +23,7 @@
     <VersionInfo>
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="1"/>
-      <BuildNr Value="26"/>
+      <BuildNr Value="38"/>
       <StringTable Comments="http://dreamsdk.org/" CompanyName="The DreamSDK Team" FileDescription="Code::Blocks Patcher Helper for DreamSDK Setup" InternalName="cbhelper" LegalCopyright="© Copyleft 2018-2020" LegalTrademarks="Code::Blocks is distributed under the GNU GPL3. Sega and Dreamcast are registered trademark of Sega Games Co., Ltd." OriginalFilename="cbhelper.exe" ProductName="DreamSDK" ProductVersion="3.0.4.2001"/>
     </VersionInfo>
     <BuildModes Count="2">
@@ -54,7 +54,7 @@
             <LinkSmart Value="True"/>
           </Linking>
           <Other>
-            <CustomOptions Value="-dRELEASE -dLITE_VERSION"/>
+            <CustomOptions Value="-dRELEASE -dLITE_VERSION -dHELPER"/>
           </Other>
         </CompilerOptions>
       </Item2>
@@ -64,13 +64,13 @@
     </PublishOptions>
     <RunParams>
       <local>
-        <CommandLineParams Value="--operation=install --verbose"/>
+        <CommandLineParams Value="--cleanup"/>
       </local>
       <FormatVersion Value="2"/>
       <Modes Count="1">
         <Mode0 Name="default">
           <local>
-            <CommandLineParams Value="--operation=install --verbose"/>
+            <CommandLineParams Value="--cleanup"/>
           </local>
         </Mode0>
       </Modes>
@@ -130,7 +130,7 @@
         <ShowDebugInfo Value="True"/>
         <ShowUsedFiles Value="True"/>
       </Verbosity>
-      <CustomOptions Value="-dDEBUG -dLITE_VERSION"/>
+      <CustomOptions Value="-dDEBUG -dLITE_VERSION -dHELPER"/>
     </Other>
   </CompilerOptions>
   <Debugging>
