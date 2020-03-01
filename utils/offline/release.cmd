@@ -28,21 +28,29 @@ call :trim OUTPUT_DIR
 rem Utilities
 set PYREPL="%PYTHON%" "%BASE_DIR%\data\pyrepl.py"
 
-rem Directories
-set KOS_INPUT_DIR=%INPUT_DIR%\kos
-set KOS_OUTPUT_DIR=%OUTPUT_DIR%\kos
-set KOS_PORTS_INPUT_DIR=%INPUT_DIR%\kos-ports
-set KOS_PORTS_OUTPUT_DIR=%OUTPUT_DIR%\kos-ports
-set DCLOAD_IP_INPUT_DIR=%INPUT_DIR%\dcload\dcload-ip
-set DCLOAD_IP_OUTPUT_DIR=%OUTPUT_DIR%\dcload\dcload-ip
-set DCLOAD_SER_INPUT_DIR=%INPUT_DIR%\dcload\dcload-serial
-set DCLOAD_SER_OUTPUT_DIR=%OUTPUT_DIR%\dcload\dcload-serial
-set RUBY_INPUT_DIR=%INPUT_DIR%\ruby\mruby
-set RUBY_OUTPUT_DIR=%OUTPUT_DIR%\ruby\mruby
-set RUBY_DREAMPRESENT_INPUT_DIR=%INPUT_DIR%\ruby\samples\dreampresent
-set RUBY_DREAMPRESENT_OUTPUT_DIR=%OUTPUT_DIR%\ruby\samples\dreampresent
-set RUBY_MRBTRIS_INPUT_DIR=%INPUT_DIR%\ruby\samples\mrbtris
-set RUBY_MRBTRIS_OUTPUT_DIR=%OUTPUT_DIR%\ruby\samples\mrbtris
+rem KallistiOS Directories
+set LIB_INPUT_DIR=%INPUT_DIR%\lib
+set LIB_OUTPUT_DIR=%OUTPUT_DIR%\lib
+
+set KOS_INPUT_DIR=%LIB_INPUT_DIR%\kos
+set KOS_OUTPUT_DIR=%LIB_OUTPUT_DIR%\kos
+set KOS_PORTS_INPUT_DIR=%LIB_INPUT_DIR%\kos-ports
+set KOS_PORTS_OUTPUT_DIR=%LIB_OUTPUT_DIR%\kos-ports
+set DCLOAD_IP_INPUT_DIR=%LIB_INPUT_DIR%\dcload\dcload-ip
+set DCLOAD_IP_OUTPUT_DIR=%LIB_OUTPUT_DIR%\dcload\dcload-ip
+set DCLOAD_SER_INPUT_DIR=%LIB_INPUT_DIR%\dcload\dcload-serial
+set DCLOAD_SER_OUTPUT_DIR=%LIB_OUTPUT_DIR%\dcload\dcload-serial
+
+rem Ruby Directories
+set RUBY_INPUT_DIR=%INPUT_DIR%\ruby
+set RUBY_OUTPUT_DIR=%OUTPUT_DIR%\ruby
+
+set RUBY_MRUBY_INPUT_DIR=%RUBY_INPUT_DIR%\mruby
+set RUBY_MRUBY_OUTPUT_DIR=%RUBY_OUTPUT_DIR%\mruby
+set RUBY_DREAMPRESENT_INPUT_DIR=%RUBY_INPUT_DIR%\samples\dreampresent
+set RUBY_DREAMPRESENT_OUTPUT_DIR=%RUBY_OUTPUT_DIR%\samples\dreampresent
+set RUBY_MRBTRIS_INPUT_DIR=%RUBY_INPUT_DIR%\samples\mrbtris
+set RUBY_MRBTRIS_OUTPUT_DIR=%RUBY_OUTPUT_DIR%\samples\mrbtris
 
 :start
 pushd
@@ -51,6 +59,9 @@ if exist %KOS_OUTPUT_DIR% goto err_not_empty
 if exist %KOS_PORTS_OUTPUT_DIR% goto err_not_empty
 if exist %DCLOAD_IP_OUTPUT_DIR% goto err_not_empty
 if exist %DCLOAD_SER_OUTPUT_DIR% goto err_not_empty
+if exist %RUBY_OUTPUT_DIR% goto err_not_empty
+if exist %RUBY_DREAMPRESENT_OUTPUT_DIR% goto err_not_empty
+if exist %RUBY_MRBTRIS_OUTPUT_DIR% goto err_not_empty
 
 rem Additional files
 set KOS_ENVIRON=environ.sh
@@ -98,7 +109,7 @@ goto dcload
 
 rem Dreamcast-Tool
 :dcload
-mkdir %OUTPUT_DIR%\dcload
+mkdir %LIB_OUTPUT_DIR%\dcload
 goto dcloadser
 
 rem Dreamcast-Tool IP
@@ -117,9 +128,9 @@ goto ruby
 
 rem Ruby: mruby
 :ruby
-call :getver VERSION_RUBY %RUBY_INPUT_DIR%
+call :getver VERSION_RUBY %RUBY_MRUBY_INPUT_DIR%
 call :log Processing: Ruby (%VERSION_RUBY%)
-call :copy %RUBY_INPUT_DIR% %RUBY_OUTPUT_DIR% %VERSION_RUBY%
+call :copy %RUBY_MRUBY_INPUT_DIR% %RUBY_MRUBY_OUTPUT_DIR% %VERSION_RUBY%
 goto dreampresent
 
 rem Ruby: dreampresent
