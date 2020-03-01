@@ -37,6 +37,12 @@ set DCLOAD_IP_INPUT_DIR=%INPUT_DIR%\dcload\dcload-ip
 set DCLOAD_IP_OUTPUT_DIR=%OUTPUT_DIR%\dcload\dcload-ip
 set DCLOAD_SER_INPUT_DIR=%INPUT_DIR%\dcload\dcload-serial
 set DCLOAD_SER_OUTPUT_DIR=%OUTPUT_DIR%\dcload\dcload-serial
+set RUBY_INPUT_DIR=%INPUT_DIR%\ruby\mruby
+set RUBY_OUTPUT_DIR=%OUTPUT_DIR%\ruby\mruby
+set RUBY_DREAMPRESENT_INPUT_DIR=%INPUT_DIR%\ruby\samples\dreampresent
+set RUBY_DREAMPRESENT_OUTPUT_DIR=%OUTPUT_DIR%\ruby\samples\dreampresent
+set RUBY_MRBTRIS_INPUT_DIR=%INPUT_DIR%\ruby\samples\mrbtris
+set RUBY_MRBTRIS_OUTPUT_DIR=%OUTPUT_DIR%\ruby\samples\mrbtris
 
 :start
 pushd
@@ -107,6 +113,27 @@ rem Dreamcast-Tool Serial
 call :getver VERSION_DCLOAD_SERIAL %DCLOAD_SER_INPUT_DIR%
 call :log Processing: Dreamcast-Tool Serial (%VERSION_DCLOAD_SERIAL%)
 call :copy %DCLOAD_SER_INPUT_DIR% %DCLOAD_SER_OUTPUT_DIR% %VERSION_DCLOAD_SERIAL%
+goto ruby
+
+rem Ruby: mruby
+:ruby
+call :getver VERSION_RUBY %RUBY_INPUT_DIR%
+call :log Processing: Ruby (%VERSION_RUBY%)
+call :copy %RUBY_INPUT_DIR% %RUBY_OUTPUT_DIR% %VERSION_RUBY%
+goto dreampresent
+
+rem Ruby: dreampresent
+:dreampresent
+call :getver VERSION_DREAMPRESENT %RUBY_DREAMPRESENT_INPUT_DIR%
+call :log Processing: Ruby Sample: DreamPresent (%VERSION_DREAMPRESENT%)
+call :copy %RUBY_DREAMPRESENT_INPUT_DIR% %RUBY_DREAMPRESENT_OUTPUT_DIR% %VERSION_DREAMPRESENT%
+goto mrbtris
+
+rem Ruby: mrbtris
+:mrbtris
+call :getver VERSION_MRBTRIS %RUBY_MRBTRIS_INPUT_DIR%
+call :log Processing: Ruby Sample: Mrbtris (%VERSION_MRBTRIS%)
+call :copy %RUBY_MRBTRIS_INPUT_DIR% %RUBY_MRBTRIS_OUTPUT_DIR% %VERSION_MRBTRIS%
 goto finish
 
 :finish
