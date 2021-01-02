@@ -128,11 +128,52 @@ procedure TCodeBlocksHelperApplication.DoRun;
   end;
 
   procedure DetectCodeBlocksInstallation;
+  type
+    TInnoSetupTranslation = record
+      EnvironmentVariable: string;
+      InnoSetupVariable: string;
+    end;
+
+  const
+    DIRECTORIES: array[0..1] of TInnoSetupTranslation = (
+      (EnvironmentVariable: '%ProgramFiles(x86)%'; InnoSetupVariable: '{pf32}'),
+      (EnvironmentVariable: '%ProgramFiles%'; InnoSetupVariable: '{pf}')
+    );
+
   var
+    i: Integer;
     InstallationDirectory: TFileName;
+    EnvironmentVariable,
+    InnoSetupVariable: string;
 
   begin
     InstallationDirectory := GetCodeBlocksDefaultInstallationDirectory;
+{$IFDEF DEBUG}
+    WriteLn('InstallationDirectory: ', InstallationDirectory);
+{$ENDIF}
+    for i := Low(DIRECTORIES) to High(DIRECTORIES) do
+    begin
+      EnvironmentVariable := DIRECTORIES[i].EnvironmentVariable;
+      InnoSetupVariable := DIRECTORIES[i].InnoSetupVariable;
+{$IFDEF DEBUG}
+      WriteLn(EnvironmentVariable, ' => ', InnoSetupVariable);
+{$ENDIF}
+      if IsInString(EnvironmentVariable, InstallationDirectory) then
+      begin
+{$IFDEF DEBUG}
+        WriteLn('  Before: ', InstallationDirectory);
+{$ENDIF}
+        InstallationDirectory := StringReplace(
+          InstallationDirectory,
+          EnvironmentVariable,
+          InnoSetupVariable,
+          [rfReplaceAll, rfIgnoreCase]
+        );
+{$IFDEF DEBUG}
+        WriteLn('  After: ', InstallationDirectory);
+{$ENDIF}
+      end;
+    end;
     WriteLn(InstallationDirectory);
   end;
 
