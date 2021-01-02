@@ -15,11 +15,18 @@ uses
   CBPatch;
 
 type
+  ECodeBlocksHelper = class(Exception);
+  EIllegalSwitchCombinaison = class(ECodeBlocksHelper);
+
   { TCodeBlocksHelperApplication }
   TCodeBlocksHelperApplication = class(TCustomApplication)
   private
+    fUniqueSwitchsCount: Integer;
     fUsersSwitch: Boolean;
     fCleanSwitch: Boolean;
+    fDetectSwitch: Boolean;
+    fVersionSwitch: Boolean;
+    fVersionParamInstallationDirectory: TFileName;
     procedure ParseParameters;
   protected
     procedure DoRun; override;
@@ -28,25 +35,64 @@ type
     destructor Destroy; override;
   end;
 
-procedure TCodeBlocksHelperApplication.ParseParameters;
 const
+  DETECT_SWITCH = '--detect';
   USERS_SWITCH = '--get-available-users';
   CLEAN_SWITCH = '--cleanup';
+  VERSION_SWITCH = '--version';
 
+procedure TCodeBlocksHelperApplication.ParseParameters;
 var
   i: Integer;
   Param: string;
+  ParamValue: Boolean;
 
 begin
+  fUniqueSwitchsCount := 0;
   fUsersSwitch := False;
   fCleanSwitch := False;
+  fDetectSwitch := False;
+  fVersionSwitch := False;
+  fVersionParamInstallationDirectory := EmptyStr;
+  ParamValue := False;
+
   for i := 1 to ParamCount do
   begin
-    Param := LowerCase(ParamStr(i));
-    if IsInString(USERS_SWITCH, Param) then
-      fUsersSwitch := True;
-    if IsInString(CLEAN_SWITCH, Param) then
-      fCleanSwitch := True;
+    if fVersionSwitch and (not ParamValue) then
+    begin
+      fVersionParamInstallationDirectory := ParamStr(i);
+      ParamValue := True;
+    end
+    else
+    begin
+      Param := LowerCase(ParamStr(i));
+
+      // Clean: This removes all DreamSDK references from C::B files
+      // This fix can be combined with the other (it's the only one like this)
+      if IsInString(CLEAN_SWITCH, Param) then
+        fCleanSwitch := True;
+
+      // Get C::B user profiles
+      if IsInString(USERS_SWITCH, Param) then
+      begin
+        fUsersSwitch := True;
+        Inc(fUniqueSwitchsCount);
+      end;
+
+      // Detect C::B installation directory
+      if IsInString(DETECT_SWITCH, Param) then
+      begin
+        fDetectSwitch := True;
+        Inc(fUniqueSwitchsCount);
+      end;
+
+      // Detect C::B version
+      if IsInString(VERSION_SWITCH, Param) then
+      begin
+        fVersionSwitch := True;
+        Inc(fUniqueSwitchsCount);
+      end;
+    end;
   end;
 end;
 
@@ -81,12 +127,44 @@ procedure TCodeBlocksHelperApplication.DoRun;
     end;
   end;
 
+  procedure DetectCodeBlocksInstallation;
+  var
+    InstallationDirectory: TFileName;
+
+  begin
+    InstallationDirectory := GetCodeBlocksDefaultInstallationDirectory;
+    WriteLn(InstallationDirectory);
+  end;
+
+  procedure DetectCodeBlocksVersion;
+  var
+    CodeBlocksVersion: TCodeBlocksVersion;
+
+  begin
+    CodeBlocksVersion := GetCodeBlocksVersion(fVersionParamInstallationDirectory);
+    WriteLn(CodeBlocksVersionToString(CodeBlocksVersion));
+  end;
+
 begin
   ParseParameters;
+
+  if fUniqueSwitchsCount > 1 then
+    raise EIllegalSwitchCombinaison.CreateFmt('Cannot combine %d switches', [fUniqueSwitchsCount]);
+
   if fUsersSwitch then
     GetAvailableUsers;
   if fCleanSwitch then
     RemoveProfiles;
+  if fDetectSwitch then
+    DetectCodeBlocksInstallation;
+
+  if fVersionSwitch then
+  begin
+    if fVersionParamInstallationDirectory = EmptyStr then
+      raise EArgumentException.Create('Missing Code::Blocks installation directory argument');
+    DetectCodeBlocksVersion;
+  end;
+
   Terminate;
 end;
 
@@ -109,7 +187,7 @@ var
 begin
   Application := TCodeBlocksHelperApplication.Create(nil);
   try
-    Application.Title := 'Code::Blocks Patcher Helper';
+  Application.Title:='Code::Blocks Patcher Helper';
     Application.Run;
   finally
     Application.Free;
