@@ -17,7 +17,7 @@
     <VersionInfo>
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="1"/>
-      <BuildNr Value="14"/>
+      <BuildNr Value="20"/>
       <StringTable Comments="http://dreamsdk.org/" CompanyName="The DreamSDK Team" FileDescription="Portable Executable Checker for DreamSDK" InternalName="pecheck.exe" LegalCopyright="© Copyleft 2018-2020" LegalTrademarks="Sega and Dreamcast are registered trademark of Sega Games Co., Ltd." OriginalFilename="pecheck.exe" ProductName="DreamSDK" ProductVersion="3.0.4.2001"/>
     </VersionInfo>
     <BuildModes Count="2">
