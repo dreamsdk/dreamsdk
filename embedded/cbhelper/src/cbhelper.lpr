@@ -26,6 +26,7 @@ type
     fCleanSwitch: Boolean;
     fDetectSwitch: Boolean;
     fVersionSwitch: Boolean;
+    fInitializeSwitch: Boolean;
     fVersionParamInstallationDirectory: TFileName;
     procedure ParseParameters;
   protected
@@ -40,6 +41,7 @@ const
   USERS_SWITCH = '--get-available-users';
   CLEAN_SWITCH = '--cleanup';
   VERSION_SWITCH = '--version';
+  INITIALIZE_SWITCH = '--initialize';
 
 procedure TCodeBlocksHelperApplication.ParseParameters;
 var
@@ -53,6 +55,7 @@ begin
   fCleanSwitch := False;
   fDetectSwitch := False;
   fVersionSwitch := False;
+  fInitializeSwitch := False;
   fVersionParamInstallationDirectory := EmptyStr;
   ParamValue := False;
 
@@ -68,9 +71,14 @@ begin
       Param := LowerCase(ParamStr(i));
 
       // Clean: This removes all DreamSDK references from C::B files
-      // This fix can be combined with the other (it's the only one like this)
+      // This switch can be combined with others
       if IsInString(CLEAN_SWITCH, Param) then
         fCleanSwitch := True;
+
+      // Initialize: This will create a default C::B user profiles for each user
+      // This switch can be combined with others
+      if IsInString(INITIALIZE_SWITCH, Param) then
+        fInitializeSwitch := True;
 
       // Get C::B user profiles
       if IsInString(USERS_SWITCH, Param) then
@@ -192,10 +200,12 @@ begin
   if fUniqueSwitchsCount > 1 then
     raise EIllegalSwitchCombinaison.CreateFmt('Cannot combine %d switches', [fUniqueSwitchsCount]);
 
-  if fUsersSwitch then
-    GetAvailableUsers;
   if fCleanSwitch then
     RemoveProfiles;
+
+  if fInitializeSwitch then
+    InitializeCodeBlocksProfiles;
+
   if fDetectSwitch then
     DetectCodeBlocksInstallation;
 
@@ -205,6 +215,9 @@ begin
       raise EArgumentException.Create('Missing Code::Blocks installation directory argument');
     DetectCodeBlocksVersion;
   end;
+
+  if fUsersSwitch then
+    GetAvailableUsers;
 
   Terminate;
 end;

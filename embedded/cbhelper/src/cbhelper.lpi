@@ -21,10 +21,11 @@
       </XPManifest>
     </General>
     <VersionInfo>
+      <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="1"/>
-      <BuildNr Value="105"/>
-      <StringTable Comments="http://dreamsdk.org/" CompanyName="The DreamSDK Team" FileDescription="Code::Blocks Patcher Helper for DreamSDK Setup" InternalName="cbhelper" LegalCopyright="© Copyleft 2018-2020" LegalTrademarks="Code::Blocks is distributed under the GNU GPL3. Sega and Dreamcast are registered trademark of Sega Games Co., Ltd." OriginalFilename="cbhelper.exe" ProductName="DreamSDK" ProductVersion="3.0.4.2001"/>
+      <BuildNr Value="116"/>
+      <StringTable Comments="http://dreamsdk.org/" CompanyName="The DreamSDK Team" FileDescription="Code::Blocks Patcher Helper for DreamSDK Setup" InternalName="cbhelper" LegalCopyright="© Copyleft 2018-2021" LegalTrademarks="Code::Blocks is distributed under the GNU GPL3. Sega and Dreamcast are registered trademark of Sega Games Co., Ltd." OriginalFilename="cbhelper.exe" ProductName="DreamSDK" ProductVersion="3.0.4.2106"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>
@@ -64,13 +65,13 @@
     </PublishOptions>
     <RunParams>
       <local>
-        <CommandLineParams Value="--detect"/>
+        <CommandLineParams Value="--initialize"/>
       </local>
       <FormatVersion Value="2"/>
       <Modes Count="1">
         <Mode0 Name="default">
           <local>
-            <CommandLineParams Value="--detect"/>
+            <CommandLineParams Value="--initialize"/>
           </local>
         </Mode0>
       </Modes>

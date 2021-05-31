@@ -12,7 +12,11 @@ var
   ProgramName: string;
   FileName: TFileName;
 
+{$R *.res}
+
 begin
+//  Application.Title:='Portable Executable Checker';
+
   ProgramName := GetProgramName;
   if ParamCount < 1 then
   begin
