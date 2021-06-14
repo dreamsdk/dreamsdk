@@ -11,6 +11,7 @@ uses
   CustApp,
   FSTools,
   SysTools,
+  Version,
   CBTools,
   CBPatch;
 
@@ -140,12 +141,14 @@ procedure TCodeBlocksHelperApplication.DoRun;
     TInnoSetupTranslation = record
       EnvironmentVariable: string;
       InnoSetupVariable: string;
+      Is64BitOnly: Boolean;
     end;
 
   const
-    DIRECTORIES: array[0..1] of TInnoSetupTranslation = (
-      (EnvironmentVariable: '%ProgramFiles(x86)%'; InnoSetupVariable: '{pf32}'),
-      (EnvironmentVariable: '%ProgramFiles%'; InnoSetupVariable: '{pf}')
+    DIRECTORIES: array[0..2] of TInnoSetupTranslation = (
+      (EnvironmentVariable: '%ProgramFiles(x86)%'; InnoSetupVariable: '{pf32}'; Is64BitOnly: True),
+      (EnvironmentVariable: '%ProgramFiles%'; InnoSetupVariable: '{pf64}'; Is64BitOnly: True),
+      (EnvironmentVariable: '%ProgramFiles%'; InnoSetupVariable: '{pf32}'; Is64BitOnly: False)
     );
 
   var
@@ -153,6 +156,7 @@ procedure TCodeBlocksHelperApplication.DoRun;
     InstallationDirectory: TFileName;
     EnvironmentVariable,
     InnoSetupVariable: string;
+    InnoSetupTranslation: TInnoSetupTranslation;
 
   begin
     InstallationDirectory := GetCodeBlocksDefaultInstallationDirectory;
@@ -161,25 +165,30 @@ procedure TCodeBlocksHelperApplication.DoRun;
 {$ENDIF}
     for i := Low(DIRECTORIES) to High(DIRECTORIES) do
     begin
-      EnvironmentVariable := DIRECTORIES[i].EnvironmentVariable;
-      InnoSetupVariable := DIRECTORIES[i].InnoSetupVariable;
-{$IFDEF DEBUG}
-      WriteLn(EnvironmentVariable, ' => ', InnoSetupVariable);
-{$ENDIF}
-      if IsInString(EnvironmentVariable, InstallationDirectory) then
+      InnoSetupTranslation := DIRECTORIES[i];
+      if ((InnoSetupTranslation.Is64BitOnly and IsWindows64)
+        or (not InnoSetupTranslation.Is64BitOnly and not IsWindows64)) then
       begin
+        EnvironmentVariable := InnoSetupTranslation.EnvironmentVariable;
+        InnoSetupVariable := InnoSetupTranslation.InnoSetupVariable;
 {$IFDEF DEBUG}
-        WriteLn('  Before: ', InstallationDirectory);
+        WriteLn(EnvironmentVariable, ' => ', InnoSetupVariable);
 {$ENDIF}
-        InstallationDirectory := StringReplace(
-          InstallationDirectory,
-          EnvironmentVariable,
-          InnoSetupVariable,
-          [rfReplaceAll, rfIgnoreCase]
-        );
+        if IsInString(EnvironmentVariable, InstallationDirectory) then
+        begin
 {$IFDEF DEBUG}
-        WriteLn('  After: ', InstallationDirectory);
+          WriteLn('  Before: ', InstallationDirectory);
 {$ENDIF}
+          InstallationDirectory := StringReplace(
+            InstallationDirectory,
+            EnvironmentVariable,
+            InnoSetupVariable,
+            [rfReplaceAll, rfIgnoreCase]
+          );
+{$IFDEF DEBUG}
+          WriteLn('  After: ', InstallationDirectory);
+{$ENDIF}
+        end;
       end;
     end;
     WriteLn(InstallationDirectory);
