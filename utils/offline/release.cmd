@@ -53,8 +53,17 @@ set RUBY_MRBTRIS_INPUT_DIR=%RUBY_INPUT_DIR%\samples\mrbtris
 set RUBY_MRBTRIS_OUTPUT_DIR=%RUBY_OUTPUT_DIR%\samples\mrbtris
 
 :start
-pushd
+pushd .
 
+rem Check Python
+set PYTHON_VERSION_MAJOR=
+set PYTHON_VERSION=
+call :check_python PYTHON_VERSION_MAJOR PYTHON_VERSION
+if "%PYTHON_VERSION_MAJOR%"=="3" goto checkdirs
+goto err_binary_python
+
+rem Check directories
+:checkdirs
 if exist %KOS_OUTPUT_DIR% goto err_not_empty
 if exist %KOS_PORTS_OUTPUT_DIR% goto err_not_empty
 if exist %DCLOAD_IP_OUTPUT_DIR% goto err_not_empty
@@ -165,6 +174,10 @@ call :log Please cleanup the output directory.
 call :log Output directory: '%OUTPUT_DIR%'.
 goto end
 
+:err_binary_python
+call :log Python 3 was not found in your PATH.
+goto end
+
 rem ## Utilities ###############################################################
 
 :trim
@@ -235,4 +248,41 @@ goto :EOF
 
 :wait
 %RUNNER% "sleep 3"
+goto :EOF
+
+:check_python
+rem Check if Python is installed and retrieve the version (incl. Major Version)
+rem Usage: call :check_python PYTHON_VERSION_MAJOR PYTHON_VERSION
+setlocal EnableDelayedExpansion
+set _python_exec=python.exe
+set _python_installed=0
+set _python_version_major=
+set _python_version=
+set _python_buffer_temp=%_python_exec%_buffer.tmp
+call :check_command %_python_exec% _python_installed
+if "%_python_installed%"=="0" goto check_python_exit
+%_python_exec% --version > %_python_buffer_temp% 2>&1
+set /p _cmd_raw_output=<%_python_buffer_temp%
+if "%_cmd_raw_output:~0,6%"=="Python" goto check_python_install
+:check_python_install
+for /f "tokens=2 delims= " %%V in ('type %_python_buffer_temp%') do (
+  set _python_version=%%V
+)
+set "_python_version_major=%_python_version:~0,1%"
+:check_python_exit
+if exist %_python_buffer_temp% del %_python_buffer_temp%
+endlocal & (
+	set "%~1=%_python_version_major%"
+	set "%~2=%_python_version%"
+)
+goto :EOF
+
+:check_command
+rem Thanks Joey: https://superuser.com/a/175831
+rem Warning: _exec should be the name of the executable to check WITH its extension (e.g., ".exe")
+setlocal EnableDelayedExpansion
+set _exec=%1
+set _cmdfound=0
+for %%x in (%_exec%) do if not [%%~$PATH:x]==[] set _cmdfound=1
+endlocal & set "%~2=%_cmdfound%"
 goto :EOF

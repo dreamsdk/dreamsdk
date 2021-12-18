@@ -1,6 +1,5 @@
 # http://code.activestate.com/recipes/277753-find-and-replace-string-in-all-files-in-a-director/
-
-import fileinput, glob, string, sys, os, mimetypes
+import argparse, fileinput, glob, string, sys, os, mimetypes
 
 def is_text_file(fpath):
 	base = os.path.basename(fpath)
@@ -12,14 +11,19 @@ def is_text_file(fpath):
 	return (ftype in ['application/x-sh', 'text/plain']) or \
 		(file_extension in ['.mk', '.cpp', '.s', '.awk']) or \
 		(radical in ['makefile', 'doxyfile', 'readme', 'faq', 'relnotes'])
-	   
-if len(sys.argv) < 3:
-    print "usage: %s <search_text> <replace_text> <directory>" % os.path.basename(sys.argv[0])
-    sys.exit(0)
 
-stext = sys.argv[1]
-rtext = sys.argv[2]
-path = sys.argv[3]
+parser = argparse.ArgumentParser(description='find and replace a string in all files in a directory')
+parser.add_argument('search_text', help='text to search in all files')
+parser.add_argument('replace_text', help='remplacement text')
+parser.add_argument('directory', help='target directory')
+args = parser.parse_args()
+
+stext = args.search_text
+rtext = args.replace_text
+path = args.directory
+
+if not os.path.exists(path):
+    raise SystemExit('error: directory not found: {path}'.format(path = path))
 
 for dname, dirs, files in os.walk(path):
     for fname in files:
@@ -30,4 +34,3 @@ for dname, dirs, files in os.walk(path):
             s = s.replace(stext, rtext)
             with open(fpath, "w") as f:
                 f.write(s)
-				
