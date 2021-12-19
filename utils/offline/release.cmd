@@ -1,4 +1,4 @@
-@echo off
+rem @echo off
 set APP_TITLE=KallistiOS Offline Packager for DreamSDK Setup
 title %APP_TITLE%
 cls
@@ -13,6 +13,9 @@ if exist %LOG_FILE% del %LOG_FILE%
 call :log %APP_TITLE%
 call :log
 
+rem Check if DreamSDK is installed (of course, you can use a previous version!)
+if "$%DREAMSDK_HOME%"=="$" goto err_dreamsdk_missing
+
 rem Read Configuration
 set CONFIG_FILE=%BASE_DIR%\release.ini
 for /F "tokens=*" %%i in (%CONFIG_FILE%) do (
@@ -20,13 +23,23 @@ for /F "tokens=*" %%i in (%CONFIG_FILE%) do (
 )
 
 rem Sanitize configuration entries
-call :trim PATCH
+call :trim GIT
 call :trim PYTHON
+call :trim SEVENZIP
 call :trim INPUT_DIR
 call :trim OUTPUT_DIR
+call :trim KALLISTI_URL
+call :trim KALLISTI_PORTS_URL
+call :trim DREAMCAST_TOOL_SERIAL_URL
+call :trim DREAMCAST_TOOL_INTERNET_PROTOCOL_URL
+call :trim RUBY_URL
+call :trim RUBY_SAMPLE_DREAMPRESENT_URL
+call :trim RUBY_SAMPLE_MRBTRIS_URL
 
 rem Utilities
 set PYREPL="%PYTHON%" "%BASE_DIR%\data\pyrepl.py"
+set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
+set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 
 rem KallistiOS Directories
 set LIB_INPUT_DIR=%INPUT_DIR%\lib
@@ -36,10 +49,12 @@ set KOS_INPUT_DIR=%LIB_INPUT_DIR%\kos
 set KOS_OUTPUT_DIR=%LIB_OUTPUT_DIR%\kos
 set KOS_PORTS_INPUT_DIR=%LIB_INPUT_DIR%\kos-ports
 set KOS_PORTS_OUTPUT_DIR=%LIB_OUTPUT_DIR%\kos-ports
-set DCLOAD_IP_INPUT_DIR=%LIB_INPUT_DIR%\dcload\dcload-ip
-set DCLOAD_IP_OUTPUT_DIR=%LIB_OUTPUT_DIR%\dcload\dcload-ip
-set DCLOAD_SER_INPUT_DIR=%LIB_INPUT_DIR%\dcload\dcload-serial
-set DCLOAD_SER_OUTPUT_DIR=%LIB_OUTPUT_DIR%\dcload\dcload-serial
+set DCLOAD_INPUT_DIR=%LIB_INPUT_DIR%\dcload
+set DCLOAD_OUTPUT_DIR=%LIB_OUTPUT_DIR%\dcload
+set DCLOAD_IP_INPUT_DIR=%DCLOAD_INPUT_DIR%\dcload-ip
+set DCLOAD_IP_OUTPUT_DIR=%DCLOAD_OUTPUT_DIR%\dcload-ip
+set DCLOAD_SER_INPUT_DIR=%DCLOAD_INPUT_DIR%\dcload-serial
+set DCLOAD_SER_OUTPUT_DIR=%DCLOAD_OUTPUT_DIR%\dcload-serial
 
 rem Ruby Directories
 set RUBY_INPUT_DIR=%INPUT_DIR%\ruby
@@ -47,30 +62,34 @@ set RUBY_OUTPUT_DIR=%OUTPUT_DIR%\ruby
 
 set RUBY_MRUBY_INPUT_DIR=%RUBY_INPUT_DIR%\mruby
 set RUBY_MRUBY_OUTPUT_DIR=%RUBY_OUTPUT_DIR%\mruby
-set RUBY_DREAMPRESENT_INPUT_DIR=%RUBY_INPUT_DIR%\samples\dreampresent
-set RUBY_DREAMPRESENT_OUTPUT_DIR=%RUBY_OUTPUT_DIR%\samples\dreampresent
-set RUBY_MRBTRIS_INPUT_DIR=%RUBY_INPUT_DIR%\samples\mrbtris
-set RUBY_MRBTRIS_OUTPUT_DIR=%RUBY_OUTPUT_DIR%\samples\mrbtris
+set RUBY_SAMPLES_INPUT_DIR=%RUBY_INPUT_DIR%\samples
+set RUBY_SAMPLES_OUTPUT_DIR=%RUBY_OUTPUT_DIR%\samples
+set RUBY_DREAMPRESENT_INPUT_DIR=%RUBY_SAMPLES_INPUT_DIR%\dreampresent
+set RUBY_DREAMPRESENT_OUTPUT_DIR=%RUBY_SAMPLES_OUTPUT_DIR%\dreampresent
+set RUBY_MRBTRIS_INPUT_DIR=%RUBY_SAMPLES_INPUT_DIR%\mrbtris
+set RUBY_MRBTRIS_OUTPUT_DIR=%RUBY_SAMPLES_OUTPUT_DIR%\mrbtris
 
 :start
 pushd .
 
-rem Check Python
+:check_python
 set PYTHON_VERSION_MAJOR=
 set PYTHON_VERSION=
-call :check_python PYTHON_VERSION_MAJOR PYTHON_VERSION
-if "%PYTHON_VERSION_MAJOR%"=="3" goto checkdirs
+call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
+if "$%PYTHON_VERSION_MAJOR%"=="$3" goto check_git
 goto err_binary_python
 
-rem Check directories
-:checkdirs
-if exist %KOS_OUTPUT_DIR% goto err_not_empty
-if exist %KOS_PORTS_OUTPUT_DIR% goto err_not_empty
-if exist %DCLOAD_IP_OUTPUT_DIR% goto err_not_empty
-if exist %DCLOAD_SER_OUTPUT_DIR% goto err_not_empty
-if exist %RUBY_OUTPUT_DIR% goto err_not_empty
-if exist %RUBY_DREAMPRESENT_OUTPUT_DIR% goto err_not_empty
-if exist %RUBY_MRBTRIS_OUTPUT_DIR% goto err_not_empty
+:check_git
+set GIT_VERSION=
+call :get_version_git GIT_VERSION
+if "$%GIT_VERSION%"=="$" goto err_binary_git
+
+:checkinputdirs
+if not exist %INPUT_DIR% mkdir %INPUT_DIR%
+if not exist %LIB_INPUT_DIR% mkdir %LIB_INPUT_DIR%
+if not exist %DCLOAD_INPUT_DIR% mkdir %DCLOAD_INPUT_DIR%
+if not exist %RUBY_INPUT_DIR% mkdir %RUBY_INPUT_DIR%
+if not exist %RUBY_SAMPLES_INPUT_DIR% mkdir %RUBY_SAMPLES_INPUT_DIR%
 
 rem Additional files
 set KOS_ENVIRON=environ.sh
@@ -81,6 +100,8 @@ rem KallistiOS
 :kos
 call :getver VERSION_KOS %KOS_INPUT_DIR%
 call :log Processing: KallistiOS (%VERSION_KOS%)
+call :git %LIB_INPUT_DIR% kos %KALLISTI_URL%
+call :remove_dir_tree %KOS_OUTPUT_DIR%
 call :copy %KOS_INPUT_DIR% %KOS_OUTPUT_DIR% %VERSION_KOS%
 if exist %KOS_OUTPUT_DIR%\%KOS_ENVIRON% del %KOS_OUTPUT_DIR%\%KOS_ENVIRON%
 call :setver "KallistiOS ##version##" "KallistiOS %VERSION_KOS%" "%KOS_OUTPUT_DIR%"
@@ -96,6 +117,8 @@ set KOS_PORTS_UTILS_DIR=%KOS_PORTS_INPUT_DIR%\utils
 
 call :getver VERSION_KOS_PORTS %KOS_PORTS_INPUT_DIR%
 call :log Processing: KallistiOS Ports (%VERSION_KOS_PORTS%)
+call :remove_dir_tree %KOS_PORTS_OUTPUT_DIR%
+call :git %LIB_INPUT_DIR% kos-ports %KALLISTI_PORTS_URL%
 
 rem Download all KallistiOS Ports at once
 call :patch %KOS_PORTS_INPUT_DIR% %KOS_PORTS_PATCH_DIR%\fetch.diff
@@ -118,20 +141,23 @@ goto dcload
 
 rem Dreamcast-Tool
 :dcload
+title %APP_TITLE%
 mkdir %LIB_OUTPUT_DIR%\dcload
-goto dcloadser
 
 rem Dreamcast-Tool IP
-:dcloadser
+:dcload_ip
 call :getver VERSION_DCLOAD_IP %DCLOAD_IP_INPUT_DIR%
 call :log Processing: Dreamcast-Tool Internet Protocol (%VERSION_DCLOAD_IP%)
+call :remove_dir_tree %DCLOAD_IP_OUTPUT_DIR%
+call :git %DCLOAD_INPUT_DIR% dcload-ip %DREAMCAST_TOOL_INTERNET_PROTOCOL_URL%
 call :copy %DCLOAD_IP_INPUT_DIR% %DCLOAD_IP_OUTPUT_DIR% %VERSION_DCLOAD_IP%
-goto dcloadip
 
 rem Dreamcast-Tool Serial
-:dcloadip
+:dcload_serial
 call :getver VERSION_DCLOAD_SERIAL %DCLOAD_SER_INPUT_DIR%
 call :log Processing: Dreamcast-Tool Serial (%VERSION_DCLOAD_SERIAL%)
+call :remove_dir_tree %DCLOAD_SER_OUTPUT_DIR%
+call :git %DCLOAD_INPUT_DIR% dcload-serial %DREAMCAST_TOOL_SERIAL_URL%
 call :copy %DCLOAD_SER_INPUT_DIR% %DCLOAD_SER_OUTPUT_DIR% %VERSION_DCLOAD_SERIAL%
 goto ruby
 
@@ -139,22 +165,25 @@ rem Ruby: mruby
 :ruby
 call :getver VERSION_RUBY %RUBY_MRUBY_INPUT_DIR%
 call :log Processing: Ruby (%VERSION_RUBY%)
+call :remove_dir_tree %RUBY_OUTPUT_DIR%
+call :git %RUBY_INPUT_DIR% mruby %RUBY_URL%
 call :copy %RUBY_MRUBY_INPUT_DIR% %RUBY_MRUBY_OUTPUT_DIR% %VERSION_RUBY%
-goto dreampresent
 
 rem Ruby: dreampresent
-:dreampresent
+:ruby_dreampresent
 call :getver VERSION_DREAMPRESENT %RUBY_DREAMPRESENT_INPUT_DIR%
 call :log Processing: Ruby Sample: DreamPresent (%VERSION_DREAMPRESENT%)
+call :remove_dir_tree %RUBY_DREAMPRESENT_OUTPUT_DIR%
+call :git %RUBY_SAMPLES_INPUT_DIR% dreampresent %RUBY_SAMPLE_DREAMPRESENT_URL%
 call :copy %RUBY_DREAMPRESENT_INPUT_DIR% %RUBY_DREAMPRESENT_OUTPUT_DIR% %VERSION_DREAMPRESENT%
-goto mrbtris
 
 rem Ruby: mrbtris
-:mrbtris
+:ruby_mrbtris
 call :getver VERSION_MRBTRIS %RUBY_MRBTRIS_INPUT_DIR%
 call :log Processing: Ruby Sample: Mrbtris (%VERSION_MRBTRIS%)
+call :remove_dir_tree %RUBY_MRBTRIS_OUTPUT_DIR%
+call :git %RUBY_SAMPLES_INPUT_DIR% mrbtris %RUBY_SAMPLE_MRBTRIS_URL%
 call :copy %RUBY_MRBTRIS_INPUT_DIR% %RUBY_MRBTRIS_OUTPUT_DIR% %VERSION_MRBTRIS%
-goto finish
 
 :finish
 call :log
@@ -169,13 +198,16 @@ goto :EOF
 
 rem ## Errors ##################################################################
 
-:err_not_empty
-call :log Please cleanup the output directory.
-call :log Output directory: '%OUTPUT_DIR%'.
-goto end
-
 :err_binary_python
 call :log Python 3 was not found in your PATH.
+goto end
+
+:err_binary_git
+call :log Git was not found in your PATH.
+goto end
+
+:err_dreamsdk_missing
+call :log Please install DreamSDK to use this script.
 goto end
 
 rem ## Utilities ###############################################################
@@ -227,6 +259,27 @@ goto :EOF
 set tmpwin2unix=%*
 goto :EOF
 
+:compress
+%SEVENZIP% a -t7z -mx%BACKUP_COMPRESSION_LEVEL% %BACKUP_FILE_PATH% .
+goto :EOF
+
+:git
+rem Usage: call :git <target_path> <repo_dir> <repo_url>
+setlocal EnableDelayedExpansion
+set _git_target_path=%1
+set _git_repo_dir=%2
+set _git_repo_url=%3
+if not exist "%_git_target_path%\%_git_repo_dir%" goto git_clone
+goto git_pull
+:git_clone
+%GIT% -C "%_git_target_path%" clone %_git_repo_url% %_git_repo_dir% --verbose >> %LOG_FILE% 2>&1
+goto git_exit
+:git_pull
+%GIT% -C "%_git_target_path%\%_git_repo_dir%" pull --verbose >> %LOG_FILE% 2>&1
+:git_exit
+endlocal
+goto :EOF
+
 :patch
 %PATCH% -N -d %1 -p1 -r - < %2 >> %LOG_FILE% 2>&1
 goto :EOF
@@ -250,9 +303,42 @@ goto :EOF
 %RUNNER% "sleep 3"
 goto :EOF
 
-:check_python
+:remove_dir_tree
+setlocal EnableDelayedExpansion
+set _remove_dir_tree=%1
+if "$%_remove_dir_tree%"=="$" goto remove_dir_tree_exit
+if exist %_remove_dir_tree% rmdir /S "%_remove_dir_tree%" /Q
+:remove_dir_tree_exit
+endlocal
+goto :EOF
+
+:get_version_git
+rem Check if Git is installed
+rem Usage: call :get_version_git GIT_VERSION
+setlocal EnableDelayedExpansion
+set _git_exec=git.exe
+set _git_installed=0
+set _git_version=
+set _git_buffer_temp=%_git_exec%_buffer.tmp
+call :check_command %_git_exec% _git_installed
+if "%_git_installed%"=="0" goto get_version_git_exit
+%_git_exec% --version > %_git_buffer_temp% 2>&1
+set /p _cmd_raw_output=<%_git_buffer_temp%
+if "%_cmd_raw_output:~0,11%"=="git version" goto get_version_git_install
+:get_version_git_install
+for /f "tokens=3 delims= " %%V in ('type %_git_buffer_temp%') do (
+  set _git_version=%%V
+)
+:get_version_git_exit
+if exist %_git_buffer_temp% del %_git_buffer_temp%
+endlocal & (
+	set "%~1=%_git_version%"
+)
+goto :EOF
+
+:get_version_python
 rem Check if Python is installed and retrieve the version (incl. Major Version)
-rem Usage: call :check_python PYTHON_VERSION_MAJOR PYTHON_VERSION
+rem Usage: call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
 setlocal EnableDelayedExpansion
 set _python_exec=python.exe
 set _python_installed=0
@@ -260,16 +346,16 @@ set _python_version_major=
 set _python_version=
 set _python_buffer_temp=%_python_exec%_buffer.tmp
 call :check_command %_python_exec% _python_installed
-if "%_python_installed%"=="0" goto check_python_exit
+if "%_python_installed%"=="0" goto get_version_python_exit
 %_python_exec% --version > %_python_buffer_temp% 2>&1
 set /p _cmd_raw_output=<%_python_buffer_temp%
-if "%_cmd_raw_output:~0,6%"=="Python" goto check_python_install
-:check_python_install
+if "%_cmd_raw_output:~0,6%"=="Python" goto get_version_python_install
+:get_version_python_install
 for /f "tokens=2 delims= " %%V in ('type %_python_buffer_temp%') do (
   set _python_version=%%V
 )
 set "_python_version_major=%_python_version:~0,1%"
-:check_python_exit
+:get_version_python_exit
 if exist %_python_buffer_temp% del %_python_buffer_temp%
 endlocal & (
 	set "%~1=%_python_version_major%"

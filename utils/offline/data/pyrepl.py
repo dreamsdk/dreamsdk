@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 # http://code.activestate.com/recipes/277753-find-and-replace-string-in-all-files-in-a-director/
+
 import argparse, fileinput, glob, string, sys, os, mimetypes
 
 def is_text_file(fpath):
@@ -12,8 +14,8 @@ def is_text_file(fpath):
 		(file_extension in ['.mk', '.cpp', '.s', '.awk']) or \
 		(radical in ['makefile', 'doxyfile', 'readme', 'faq', 'relnotes'])
 
-parser = argparse.ArgumentParser(description='find and replace a string in all files in a directory')
-parser.add_argument('search_text', help='text to search in all files')
+parser = argparse.ArgumentParser(description='find and replace a specific string in all text files in a directory')
+parser.add_argument('search_text', help='text to search in all text files')
 parser.add_argument('replace_text', help='remplacement text')
 parser.add_argument('directory', help='target directory')
 args = parser.parse_args()
