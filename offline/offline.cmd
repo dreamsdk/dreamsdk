@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 set APP_TITLE=KallistiOS Offline Packager for DreamSDK Setup
 title %APP_TITLE%
 cls
@@ -99,16 +99,13 @@ if not exist %DCLOAD_INPUT_DIR% mkdir %DCLOAD_INPUT_DIR%
 if not exist %RUBY_INPUT_DIR% mkdir %RUBY_INPUT_DIR%
 if not exist %RUBY_SAMPLES_INPUT_DIR% mkdir %RUBY_SAMPLES_INPUT_DIR%
 
-rem Additional files
-set KOS_ENVIRON=environ.sh
-
-goto kos
-
 rem KallistiOS
 :kos
-call :getver VERSION_KOS %KOS_INPUT_DIR%
-call :log Processing: KallistiOS (%VERSION_KOS%)
+set KOS_ENVIRON=environ.sh
+call :log Processing: KallistiOS
 call :git %LIB_INPUT_DIR% kos %KALLISTI_URL%
+call :getver VERSION_KOS %KOS_INPUT_DIR%
+call :log * Version: %VERSION_KOS%
 call :remove_dir_tree %KOS_OUTPUT_DIR%
 call :copy %KOS_INPUT_DIR% %KOS_OUTPUT_DIR% %VERSION_KOS%
 if exist %KOS_OUTPUT_DIR%\%KOS_ENVIRON% del %KOS_OUTPUT_DIR%\%KOS_ENVIRON%
@@ -123,11 +120,12 @@ rem KallistiOS Ports
 :kosports
 set KOS_PORTS_PATCH_DIR=%BASE_DIR%\data\kos-ports
 set KOS_PORTS_UTILS_DIR=%KOS_PORTS_INPUT_DIR%\utils
+call :log Processing: KallistiOS Ports
 
-call :getver VERSION_KOS_PORTS %KOS_PORTS_INPUT_DIR%
-call :log Processing: KallistiOS Ports (%VERSION_KOS_PORTS%)
-call :remove_dir_tree %KOS_PORTS_OUTPUT_DIR%
 call :git %LIB_INPUT_DIR% kos-ports %KALLISTI_PORTS_URL%
+call :getver VERSION_KOS_PORTS %KOS_PORTS_INPUT_DIR%
+call :log * Version: %VERSION_KOS_PORTS%
+call :remove_dir_tree %KOS_PORTS_OUTPUT_DIR%
 
 rem Download all KallistiOS Ports at once
 call :patch %KOS_PORTS_INPUT_DIR% %KOS_PORTS_PATCH_DIR%\fetch.diff
@@ -152,50 +150,55 @@ goto dcload
 rem Dreamcast-Tool
 :dcload
 title %APP_TITLE%
-mkdir %LIB_OUTPUT_DIR%\dcload
+if not exist "%LIB_OUTPUT_DIR%\dcload" mkdir %LIB_OUTPUT_DIR%\dcload
 
 rem Dreamcast-Tool IP
 :dcload_ip
-call :getver VERSION_DCLOAD_IP %DCLOAD_IP_INPUT_DIR%
-call :log Processing: Dreamcast-Tool Internet Protocol (%VERSION_DCLOAD_IP%)
-call :remove_dir_tree %DCLOAD_IP_OUTPUT_DIR%
+call :log Processing: Dreamcast-Tool Internet Protocol
 call :git %DCLOAD_INPUT_DIR% dcload-ip %DREAMCAST_TOOL_INTERNET_PROTOCOL_URL%
+call :getver VERSION_DCLOAD_IP %DCLOAD_IP_INPUT_DIR%
+call :log  Version: %VERSION_DCLOAD_IP%
+call :remove_dir_tree %DCLOAD_IP_OUTPUT_DIR%
 call :copy %DCLOAD_IP_INPUT_DIR% %DCLOAD_IP_OUTPUT_DIR% %VERSION_DCLOAD_IP%
 call :packsrc dcload-ip %DCLOAD_IP_OUTPUT_DIR%
 
 rem Dreamcast-Tool Serial
 :dcload_serial
-call :getver VERSION_DCLOAD_SERIAL %DCLOAD_SER_INPUT_DIR%
-call :log Processing: Dreamcast-Tool Serial (%VERSION_DCLOAD_SERIAL%)
-call :remove_dir_tree %DCLOAD_SER_OUTPUT_DIR%
+call :log Processing: Dreamcast-Tool Serial
 call :git %DCLOAD_INPUT_DIR% dcload-serial %DREAMCAST_TOOL_SERIAL_URL%
+call :getver VERSION_DCLOAD_SERIAL %DCLOAD_SER_INPUT_DIR%
+call :log * Version: %VERSION_DCLOAD_SERIAL%
+call :remove_dir_tree %DCLOAD_SER_OUTPUT_DIR%
 call :copy %DCLOAD_SER_INPUT_DIR% %DCLOAD_SER_OUTPUT_DIR% %VERSION_DCLOAD_SERIAL%
 call :packsrc dcload-serial %DCLOAD_SER_OUTPUT_DIR%
 goto ruby
 
 rem Ruby: mruby
 :ruby
-call :getver VERSION_RUBY %RUBY_MRUBY_INPUT_DIR%
-call :log Processing: Ruby (%VERSION_RUBY%)
-call :remove_dir_tree %RUBY_OUTPUT_DIR%
+call :log Processing: Ruby
 call :git %RUBY_INPUT_DIR% mruby %RUBY_URL%
+call :getver VERSION_RUBY %RUBY_MRUBY_INPUT_DIR%
+call :log * Version: %VERSION_RUBY%
+call :remove_dir_tree %RUBY_OUTPUT_DIR%
 call :copy %RUBY_MRUBY_INPUT_DIR% %RUBY_MRUBY_OUTPUT_DIR% %VERSION_RUBY%
 call :packsrc ruby %RUBY_OUTPUT_DIR%
 
 rem Ruby: dreampresent
 :ruby_dreampresent
-call :getver VERSION_DREAMPRESENT %RUBY_DREAMPRESENT_INPUT_DIR%
-call :log Processing: Ruby Sample: DreamPresent (%VERSION_DREAMPRESENT%)
-call :remove_dir_tree %RUBY_DREAMPRESENT_OUTPUT_DIR%
+call :log Processing: Ruby Sample: DreamPresent
 call :git %RUBY_SAMPLES_INPUT_DIR% dreampresent %RUBY_SAMPLE_DREAMPRESENT_URL%
+call :getver VERSION_DREAMPRESENT %RUBY_DREAMPRESENT_INPUT_DIR%
+call :log * Version: %VERSION_DREAMPRESENT%
+call :remove_dir_tree %RUBY_DREAMPRESENT_OUTPUT_DIR%
 call :copy %RUBY_DREAMPRESENT_INPUT_DIR% %RUBY_DREAMPRESENT_OUTPUT_DIR% %VERSION_DREAMPRESENT%
 
 rem Ruby: mrbtris
 :ruby_mrbtris
-call :getver VERSION_MRBTRIS %RUBY_MRBTRIS_INPUT_DIR%
-call :log Processing: Ruby Sample: Mrbtris (%VERSION_MRBTRIS%)
-call :remove_dir_tree %RUBY_MRBTRIS_OUTPUT_DIR%
+call :log Processing: Ruby Sample: Mrbtris
 call :git %RUBY_SAMPLES_INPUT_DIR% mrbtris %RUBY_SAMPLE_MRBTRIS_URL%
+call :getver VERSION_MRBTRIS %RUBY_MRBTRIS_INPUT_DIR%
+call :log * Version: %VERSION_MRBTRIS%
+call :remove_dir_tree %RUBY_MRBTRIS_OUTPUT_DIR%
 call :copy %RUBY_MRBTRIS_INPUT_DIR% %RUBY_MRBTRIS_OUTPUT_DIR% %VERSION_MRBTRIS%
 
 :ruby_compress_samples
@@ -285,7 +288,7 @@ setlocal EnableDelayedExpansion
 set _package_name=%1
 set _source_dir=%2
 set _target_dir=%3
-%SEVENZIP% a -t7z -mx%SEVENZIP_COMPRESSION_LEVEL% "%_target_dir%\%_package_name%" "%_source_dir%\*"
+%SEVENZIP% a -t7z -mx%SEVENZIP_COMPRESSION_LEVEL% "%_target_dir%\%_package_name%" "%_source_dir%\*" >> %LOG_FILE% 2>&1
 endlocal
 goto :EOF
 
