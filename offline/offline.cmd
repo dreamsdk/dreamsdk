@@ -7,7 +7,7 @@ rem Initialization
 set BASE_DIR=%~dp0
 set BASE_DIR=%BASE_DIR:~0,-1%
 
-set LOG_FILE=%BASE_DIR%\release.log
+set LOG_FILE=%BASE_DIR%\offline.log
 if exist %LOG_FILE% del %LOG_FILE%
 
 call :log %APP_TITLE%
@@ -26,7 +26,7 @@ rem Sanitize configuration entries
 call :trim GIT
 call :trim PYTHON
 call :trim SEVENZIP
-call :trim INPUT_DIR
+call :trim SEVENZIP_COMPRESSION_LEVEL
 call :trim OUTPUT_DIR
 call :trim KALLISTI_URL
 call :trim KALLISTI_PORTS_URL
@@ -41,9 +41,14 @@ set PYREPL="%PYTHON%" "%BASE_DIR%\data\pyrepl.py"
 set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 
+rem Temporary Directory
+set INPUT_DIR=%BASE_DIR%\.working
+if not exist "%INPUT_DIR%" mkdir %INPUT_DIR%
+attrib +H "%INPUT_DIR%"
+
 rem KallistiOS Directories
 set LIB_INPUT_DIR=%INPUT_DIR%\lib
-set LIB_OUTPUT_DIR=%OUTPUT_DIR%\lib
+set LIB_OUTPUT_DIR=%OUTPUT_DIR%\lib-embedded\lib
 
 set KOS_INPUT_DIR=%LIB_INPUT_DIR%\kos
 set KOS_OUTPUT_DIR=%LIB_OUTPUT_DIR%\kos
@@ -58,7 +63,7 @@ set DCLOAD_SER_OUTPUT_DIR=%DCLOAD_OUTPUT_DIR%\dcload-serial
 
 rem Ruby Directories
 set RUBY_INPUT_DIR=%INPUT_DIR%\ruby
-set RUBY_OUTPUT_DIR=%OUTPUT_DIR%\ruby
+set RUBY_OUTPUT_DIR=%OUTPUT_DIR%\lib-embedded\ruby
 
 set RUBY_MRUBY_INPUT_DIR=%RUBY_INPUT_DIR%\mruby
 set RUBY_MRUBY_OUTPUT_DIR=%RUBY_OUTPUT_DIR%\mruby
@@ -68,6 +73,9 @@ set RUBY_DREAMPRESENT_INPUT_DIR=%RUBY_SAMPLES_INPUT_DIR%\dreampresent
 set RUBY_DREAMPRESENT_OUTPUT_DIR=%RUBY_SAMPLES_OUTPUT_DIR%\dreampresent
 set RUBY_MRBTRIS_INPUT_DIR=%RUBY_SAMPLES_INPUT_DIR%\mrbtris
 set RUBY_MRBTRIS_OUTPUT_DIR=%RUBY_SAMPLES_OUTPUT_DIR%\mrbtris
+
+rem Source Packages Directory
+set SOURCE_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\source-packages
 
 :start
 pushd .
@@ -108,6 +116,7 @@ call :setver "KallistiOS ##version##" "KallistiOS %VERSION_KOS%" "%KOS_OUTPUT_DI
 call :setver "relver='##version##'" "relver='%VERSION_KOS%'" "%KOS_OUTPUT_DIR%\kernel\arch\dreamcast\kernel"
 call :setver "##version##" "%VERSION_KOS%" "%KOS_OUTPUT_DIR%\doc"
 call :setver "##version##" "%VERSION_KOS%" "%KOS_OUTPUT_DIR%\kernel\arch\dreamcast\hardware\pvr"
+call :packsrc kallisti %KOS_OUTPUT_DIR%
 goto kosports
 
 rem KallistiOS Ports
@@ -137,6 +146,7 @@ call :patchreverse %KOS_PORTS_OUTPUT_DIR% %KOS_PORTS_PATCH_DIR%\fetch.diff
 call :setver "kos-ports ##version##" "kos-ports %VERSION_KOS_PORTS%" "%KOS_PORTS_OUTPUT_DIR%"
 call :setver "KallistiOS ##version##" "KallistiOS %VERSION_KOS_PORTS%" "%KOS_PORTS_OUTPUT_DIR%"
 call :setver "KOS ##version##" "KOS %VERSION_KOS_PORTS%" "%KOS_PORTS_OUTPUT_DIR%"
+call :packsrc kallisti-ports %KOS_PORTS_OUTPUT_DIR%
 goto dcload
 
 rem Dreamcast-Tool
@@ -151,6 +161,7 @@ call :log Processing: Dreamcast-Tool Internet Protocol (%VERSION_DCLOAD_IP%)
 call :remove_dir_tree %DCLOAD_IP_OUTPUT_DIR%
 call :git %DCLOAD_INPUT_DIR% dcload-ip %DREAMCAST_TOOL_INTERNET_PROTOCOL_URL%
 call :copy %DCLOAD_IP_INPUT_DIR% %DCLOAD_IP_OUTPUT_DIR% %VERSION_DCLOAD_IP%
+call :packsrc dcload-ip %DCLOAD_IP_OUTPUT_DIR%
 
 rem Dreamcast-Tool Serial
 :dcload_serial
@@ -159,6 +170,7 @@ call :log Processing: Dreamcast-Tool Serial (%VERSION_DCLOAD_SERIAL%)
 call :remove_dir_tree %DCLOAD_SER_OUTPUT_DIR%
 call :git %DCLOAD_INPUT_DIR% dcload-serial %DREAMCAST_TOOL_SERIAL_URL%
 call :copy %DCLOAD_SER_INPUT_DIR% %DCLOAD_SER_OUTPUT_DIR% %VERSION_DCLOAD_SERIAL%
+call :packsrc dcload-serial %DCLOAD_SER_OUTPUT_DIR%
 goto ruby
 
 rem Ruby: mruby
@@ -168,6 +180,7 @@ call :log Processing: Ruby (%VERSION_RUBY%)
 call :remove_dir_tree %RUBY_OUTPUT_DIR%
 call :git %RUBY_INPUT_DIR% mruby %RUBY_URL%
 call :copy %RUBY_MRUBY_INPUT_DIR% %RUBY_MRUBY_OUTPUT_DIR% %VERSION_RUBY%
+call :packsrc ruby %RUBY_OUTPUT_DIR%
 
 rem Ruby: dreampresent
 :ruby_dreampresent
@@ -184,6 +197,9 @@ call :log Processing: Ruby Sample: Mrbtris (%VERSION_MRBTRIS%)
 call :remove_dir_tree %RUBY_MRBTRIS_OUTPUT_DIR%
 call :git %RUBY_SAMPLES_INPUT_DIR% mrbtris %RUBY_SAMPLE_MRBTRIS_URL%
 call :copy %RUBY_MRBTRIS_INPUT_DIR% %RUBY_MRBTRIS_OUTPUT_DIR% %VERSION_MRBTRIS%
+
+:ruby_compress_samples
+call :packsrc samples %RUBY_SAMPLES_OUTPUT_DIR%
 
 :finish
 call :log
@@ -234,7 +250,7 @@ goto :EOF
 :getver
 set tmpgetver=(UNKNOWN)
 set tmpverfile=%1.tmp
-git -C "%2" describe --always --tags > %tmpverfile%
+%GIT% -C "%2" describe --always --tags > %tmpverfile%
 if not exist %tmpverfile% goto getverend
 setlocal EnableDelayedExpansion
 set /p tmpgetver=<%tmpverfile%
@@ -259,8 +275,18 @@ goto :EOF
 set tmpwin2unix=%*
 goto :EOF
 
+:packsrc
+if not exist "%SOURCE_PACKAGES_OUTPUT_DIR%" mkdir %SOURCE_PACKAGES_OUTPUT_DIR%
+call :compress %1-offline-src.7z %2 %SOURCE_PACKAGES_OUTPUT_DIR%
+goto :EOF
+
 :compress
-%SEVENZIP% a -t7z -mx%BACKUP_COMPRESSION_LEVEL% %BACKUP_FILE_PATH% .
+setlocal EnableDelayedExpansion
+set _package_name=%1
+set _source_dir=%2
+set _target_dir=%3
+%SEVENZIP% a -t7z -mx%SEVENZIP_COMPRESSION_LEVEL% "%_target_dir%\%_package_name%" "%_source_dir%\*"
+endlocal
 goto :EOF
 
 :git
