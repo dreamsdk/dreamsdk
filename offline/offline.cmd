@@ -217,6 +217,7 @@ call :log
 goto end
 
 :end
+call :remove_dir_tree %INPUT_DIR%
 popd
 pause
 goto :EOF
@@ -353,7 +354,7 @@ goto :EOF
 setlocal EnableDelayedExpansion
 set _remove_dir_tree=%1
 if "$%_remove_dir_tree%"=="$" goto remove_dir_tree_exit
-if exist %_remove_dir_tree% rmdir /S "%_remove_dir_tree%" /Q
+if exist %_remove_dir_tree% rmdir /S "%_remove_dir_tree%" /Q >> %LOG_FILE% 2>&1
 :remove_dir_tree_exit
 endlocal
 goto :EOF
