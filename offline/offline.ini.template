@@ -1,5 +1,5 @@
 [Directories]
-OUTPUT_DIR=D:\setup\.sources
+OUTPUT_DIR=D:\setup
 
 [Utilities]
 GIT=git

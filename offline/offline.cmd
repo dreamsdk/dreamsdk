@@ -18,6 +18,7 @@ if "$%DREAMSDK_HOME%"=="$" goto err_dreamsdk_missing
 
 rem Read Configuration
 set CONFIG_FILE=%BASE_DIR%\offline.ini
+if not exist "%CONFIG_FILE%" goto err_config
 for /F "tokens=*" %%i in (%CONFIG_FILE%) do (
 	set %%i 2> nul
 )
@@ -41,10 +42,15 @@ set PYREPL="%PYTHON%" "%BASE_DIR%\data\pyrepl.py"
 set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 
-rem Temporary Directory
+rem Input Directory
 set INPUT_DIR=%BASE_DIR%\.working
 if not exist "%INPUT_DIR%" mkdir %INPUT_DIR%
 attrib +H "%INPUT_DIR%"
+
+rem Output Directory
+if not exist "%OUTPUT_DIR%" goto err_output_dir
+set OUTPUT_DIR=%OUTPUT_DIR%\.sources
+if not exist "%OUTPUT_DIR%" mkdir %OUTPUT_DIR%
 
 rem KallistiOS Directories
 set LIB_INPUT_DIR=%INPUT_DIR%\lib
@@ -181,7 +187,7 @@ call :getver VERSION_RUBY %RUBY_MRUBY_INPUT_DIR%
 call :log * Version: %VERSION_RUBY%
 call :remove_dir_tree %RUBY_OUTPUT_DIR%
 call :copy %RUBY_MRUBY_INPUT_DIR% %RUBY_MRUBY_OUTPUT_DIR% %VERSION_RUBY%
-call :packsrc ruby %RUBY_OUTPUT_DIR%
+call :packsrc ruby %RUBY_MRUBY_OUTPUT_DIR%
 
 rem Ruby: dreampresent
 :ruby_dreampresent
@@ -202,7 +208,7 @@ call :remove_dir_tree %RUBY_MRBTRIS_OUTPUT_DIR%
 call :copy %RUBY_MRBTRIS_INPUT_DIR% %RUBY_MRBTRIS_OUTPUT_DIR% %VERSION_MRBTRIS%
 
 :ruby_compress_samples
-call :packsrc samples %RUBY_SAMPLES_OUTPUT_DIR%
+call :packsrc ruby-samples %RUBY_SAMPLES_OUTPUT_DIR%
 
 :finish
 call :log
@@ -217,6 +223,16 @@ goto :EOF
 
 rem ## Errors ##################################################################
 
+:err_config
+call :log The configuration file was not found.
+call :log File: "%CONFIG_FILE%"
+goto end
+
+:err_output_dir
+call :log The specified output directory (OUTPUT_DIR) was not found.
+call :log Directory: "%OUTPUT_DIR%"
+goto end
+
 :err_binary_python
 call :log Python 3 was not found in your PATH.
 goto end
@@ -226,7 +242,7 @@ call :log Git was not found in your PATH.
 goto end
 
 :err_dreamsdk_missing
-call :log Please install DreamSDK to use this script.
+call :log Please install DreamSDK before using this script.
 goto end
 
 rem ## Utilities ###############################################################
@@ -245,6 +261,7 @@ goto :EOF
 set EXCLUDE_FILE=%BASE_DIR%\exclude.txt
 echo .git\ > %EXCLUDE_FILE%
 echo .svn\ >> %EXCLUDE_FILE%
+rem if exist "%EXCLUDE_FILE%" attrib +h %EXCLUDE_FILE%
 xcopy %1\* %2 /exclude:%EXCLUDE_FILE% /s /i /y >> %LOG_FILE% 2>&1
 if exist %EXCLUDE_FILE% del %EXCLUDE_FILE%
 echo %3 > %2\OFFLINE
@@ -310,11 +327,11 @@ endlocal
 goto :EOF
 
 :patch
-%PATCH% -N -d %1 -p1 -r - < %2 >> %LOG_FILE% 2>&1
+%PATCH% --no-backup-if-mismatch --ignore-whitespace --fuzz 3 -N -d %1 -p1 -r - < %2 >> %LOG_FILE% 2>&1
 goto :EOF
 
 :patchreverse
-%PATCH% --reverse -N -d %1 -p1 -r - < %2 >> %LOG_FILE% 2>&1
+%PATCH% --no-backup-if-mismatch --ignore-whitespace --fuzz 3 --reverse -N -d %1 -p1 -r - < %2 >> %LOG_FILE% 2>&1
 goto :EOF
 
 :log
