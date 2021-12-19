@@ -29,15 +29,18 @@ rem Utilities
 set SEVENZIP="C:\Program Files\7-Zip\7z.exe"
 set PATCH="C:\DreamSDK\msys\1.0\bin\patch.exe"
 
-set INPUT_DIR=%BASE_DIR%\..\setup-packages
-set SYSTEM_OBJECTS_DIR=%BASE_DIR%\..\system-objects
+set INPUT_DIR=%BASE_DIR%\..\..\..\setup-packages
+set SYSTEM_OBJECTS_DIR=%BASE_DIR%\..\..\..\system-objects
 
-set OUTPUT_DIR=%BASE_DIR%\.sources
+set OUTPUT_DIR=%BASE_DIR%\..\..\..\setup\.sources
 
 :start
 pushd
 
-goto system_objects
+rem DEBUG Start
+pause
+rem goto system_objects
+rem DEBUG end
 
 :extract
 echo Extracting all setup packages...
@@ -83,25 +86,31 @@ call :unpack vmutool 1.0 addons-gui
 
 :system_objects
 call :copy "%SYSTEM_OBJECTS_DIR%\mingw" "%OUTPUT_DIR%\system-objects"
+set SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR=%OUTPUT_DIR%\system-objects-configuration
+if not exist %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%
 
 :profile
-rem TODO: PATCH NEED TO BE RECREATED
-set SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR=%OUTPUT_DIR%\system-objects-configuration
-set SOC_OUPUT_DIR=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%\etc
-set INPUT_PROFILE_FILE=%OUTPUT_DIR%\mingw-base\msys\1.0\etc\profile
-if not exist %SOC_OUPUT_DIR% (
-	mkdir %SOC_OUPUT_DIR%
-	if not exist %INPUT_PROFILE_FILE% (
-		call :log ERROR: %INPUT_PROFILE_FILE% not found!
+set SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%\etc
+set SYSTEM_OBJECTS_PROFILE_INPUT_FILE=%OUTPUT_DIR%\mingw-base\msys\1.0\etc\profile
+set SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE=%SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%\profile
+
+echo %SYSTEM_OBJECTS_PROFILE_INPUT_FILE%
+echo %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE%
+
+if not exist %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%
+
+if not exist %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE% (
+	if not exist %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% (
+		call :err File not found: "%SYSTEM_OBJECTS_PROFILE_INPUT_FILE%"
 		goto end
 	)
-	move %INPUT_PROFILE_FILE% %SOC_OUPUT_DIR%
-	call :patch %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% %SYSTEM_OBJECTS_DIR%\patches\etc\profile.diff
+	move %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%
 )
+call :patch %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% %SYSTEM_OBJECTS_DIR%\patches\etc.diff
 
 :lib_embedded
 if not exist "%OUTPUT_DIR%\lib-embedded" (
-	call :log ERROR: Missing embedded libraries!
+	call :err Missing embedded libraries!
 	goto end
 )
 
@@ -134,6 +143,10 @@ goto :EOF
 
 :patch
 %PATCH% -N -d %1 -p1 -r - < %2 >> %LOG_FILE% 2>&1
+goto :EOF
+
+:err
+call :log ERROR: %*
 goto :EOF
 
 :log
