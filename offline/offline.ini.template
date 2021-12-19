@@ -1,11 +1,11 @@
+[Directories]
+OUTPUT_DIR=D:\setup\.sources
+
 [Utilities]
 GIT=git
 PYTHON=python
 SEVENZIP="C:\Program Files\7-Zip\7z.exe"
 SEVENZIP_COMPRESSION_LEVEL=9
-
-[Directories]
-OUTPUT_DIR=D:\setup\.sources
 
 [Repositories]
 KALLISTI_URL=https://git.code.sf.net/p/cadcdev/kallistios
