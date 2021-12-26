@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 set APP_TITLE=Source Packages Preparer for DreamSDK Setup
 title %APP_TITLE%
 cls
@@ -29,73 +29,78 @@ rem Utilities
 set SEVENZIP="C:\Program Files\7-Zip\7z.exe"
 set PATCH="C:\DreamSDK\msys\1.0\bin\patch.exe"
 
-set INPUT_DIR=%BASE_DIR%\..\..\..\setup-packages
-set SYSTEM_OBJECTS_DIR=%BASE_DIR%\..\..\..\system-objects
+set INPUT_DIR=%BASE_DIR%\..\..\setup-packages
+set SYSTEM_OBJECTS_DIR=%BASE_DIR%\..\..\system-objects
 
-set OUTPUT_DIR=%BASE_DIR%\..\..\..\setup\.sources
+set OUTPUT_DIR=%BASE_DIR%\..\..\setup\.sources
+
+set BIN_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\binary-packages
 
 :start
-pushd
+pushd .
 
 rem DEBUG Start
-pause
+rem pause
 rem goto system_objects
 rem DEBUG end
 
 :extract
-echo Extracting all setup packages...
+call :log Extracting all setup packages...
+if not exist "%BIN_PACKAGES_OUTPUT_DIR%" mkdir %BIN_PACKAGES_OUTPUT_DIR%
+set NOT_INSTALLABLE_PACKAGE=0
+set INSTALLABLE_PACKAGE=1
 
 rem Extracting MinGW foundation base package
-call :unpack mingw-base 20200829
+call :unpack %NOT_INSTALLABLE_PACKAGE% mingw-base 20200829
 
 rem Extracting Toolchains...
-call :unpack arm-eabi arm-eabi-gcc-8.4.0-binutils-2.34 toolchain-experimental
-call :unpack sh-elf sh-elf-gcc-9.3.0-binutils-2.34-newlib-3.3.0 toolchain-experimental
-call :unpack arm-eabi arm-eabi-gcc-4.7.4-binutils-2.34 toolchain-stable
-call :unpack sh-elf sh-elf-gcc-4.7.4-binutils-2.34-newlib-2.0.0 toolchain-stable
+call :unpack %INSTALLABLE_PACKAGE% arm-eabi arm-eabi-gcc-8.4.0-binutils-2.34 toolchain-experimental
+call :unpack %INSTALLABLE_PACKAGE% sh-elf sh-elf-gcc-9.3.0-binutils-2.34-newlib-3.3.0 toolchain-experimental
+call :unpack %INSTALLABLE_PACKAGE% arm-eabi arm-eabi-gcc-4.7.4-binutils-2.34 toolchain-stable
+call :unpack %INSTALLABLE_PACKAGE% sh-elf sh-elf-gcc-4.7.4-binutils-2.34-newlib-2.0.0 toolchain-stable
 
 rem Extracting GNU Debugger (GDB)...
-call :unpack sh-elf-gdb 10.2 no-python
-call :unpack sh-elf-gdb 10.2 python-2.7
-call :unpack sh-elf-gdb 10.2 python-3.3
-call :unpack sh-elf-gdb 10.2 python-3.4
-call :unpack sh-elf-gdb 10.2 python-3.5
-call :unpack sh-elf-gdb 10.2 python-3.6
-call :unpack sh-elf-gdb 10.2 python-3.7
-call :unpack sh-elf-gdb 10.2 python-3.8
-call :unpack sh-elf-gdb 10.2 python-3.9
-call :unpack sh-elf-gdb 10.2 python-3.10
-call :unpack sh-elf-gdb 10.2 python-3.11
+call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb 10.2 no-python
+call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb 10.2 python-2.7
+call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb 10.2 python-3.3
+call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb 10.2 python-3.4
+call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb 10.2 python-3.5
+call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb 10.2 python-3.6
+call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb 10.2 python-3.7
+call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb 10.2 python-3.8
+call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb 10.2 python-3.9
+call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb 10.2 python-3.10
+call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb 10.2 python-3.11
 
 rem Extracting Addons Command-Line Tools
-call :unpack elevate 1.3 addons-cmd
-call :unpack pvr2png 1.01 addons-cmd
-call :unpack txfutils 20011020 addons-cmd
-call :unpack txfutils 20011020 addons-cmd txflib
-call :unpack vmutool 1.0 addons-cmd
+call :unpack %NOT_INSTALLABLE_PACKAGE% elevate 1.3 addons-cmd
+call :unpack %NOT_INSTALLABLE_PACKAGE% pvr2png 1.01 addons-cmd
+call :unpack %NOT_INSTALLABLE_PACKAGE% txfutils 20011020 addons-cmd
+call :unpack %NOT_INSTALLABLE_PACKAGE% txfutils 20011020 addons-cmd txflib
+call :unpack %NOT_INSTALLABLE_PACKAGE% vmutool 1.0 addons-cmd
 
 rem Extracting Addons GUI Tools
-call :unpack bdreams 1.0.6c addons-gui
-call :unpack buildsbi 3.2 addons-gui
-call :unpack checker 2.0.3a addons-gui
-call :unpack ipwriter 0.1.6a addons-gui
-call :unpack ipwriter 0.1.6a addons-gui iplogos
-call :unpack mrwriter 0.3 addons-gui
-call :unpack sbinducr 5.0 addons-gui
-call :unpack vmutool 1.0 addons-gui
+call :unpack %NOT_INSTALLABLE_PACKAGE% bdreams 1.0.6c addons-gui
+call :unpack %NOT_INSTALLABLE_PACKAGE% buildsbi 3.2 addons-gui
+call :unpack %NOT_INSTALLABLE_PACKAGE% checker 2.0.3a addons-gui
+call :unpack %NOT_INSTALLABLE_PACKAGE% ipwriter 0.1.6a addons-gui
+call :unpack %NOT_INSTALLABLE_PACKAGE% ipwriter 0.1.6a addons-gui iplogos
+call :unpack %NOT_INSTALLABLE_PACKAGE% mrwriter 0.3 addons-gui
+call :unpack %NOT_INSTALLABLE_PACKAGE% sbinducr 5.0 addons-gui
+call :unpack %NOT_INSTALLABLE_PACKAGE% vmutool 1.0 addons-gui
 
 :system_objects
+call :log Generating system objects...
+
 call :copy "%SYSTEM_OBJECTS_DIR%\mingw" "%OUTPUT_DIR%\system-objects"
 set SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR=%OUTPUT_DIR%\system-objects-configuration
 if not exist %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%
 
 :profile
+call :log * Generating profile file...
 set SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%\etc
 set SYSTEM_OBJECTS_PROFILE_INPUT_FILE=%OUTPUT_DIR%\mingw-base\msys\1.0\etc\profile
 set SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE=%SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%\profile
-
-echo %SYSTEM_OBJECTS_PROFILE_INPUT_FILE%
-echo %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE%
 
 if not exist %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%
 
@@ -104,13 +109,21 @@ if not exist %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE% (
 		call :err File not found: "%SYSTEM_OBJECTS_PROFILE_INPUT_FILE%"
 		goto end
 	)
-	move %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%
+	move %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 )
 call :patch %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% %SYSTEM_OBJECTS_DIR%\patches\etc.diff
 
 :lib_embedded
+call :log Checking embedded libraries...
 if not exist "%OUTPUT_DIR%\lib-embedded" (
-	call :err Missing embedded libraries!
+	call :err Missing embedded libraries. Please run Offline script.
+	goto end
+)
+
+:source_packages
+call :log Checking embedded source packages...
+if not exist "%OUTPUT_DIR%\lib-embedded" (
+	call :err Missing embedded source packages. Please run Offline script.
 	goto end
 )
 
@@ -161,24 +174,34 @@ echo.>> %LOG_FILE% 2>&1
 goto :EOF
 
 :unpack
-set _base=%1
-set _ver=%2
-if not "_%3"=="_" set _base=%3\%_base%
-set _input=%INPUT_DIR%\%_base%\%2\%1-bin.7z
-if not exist %_input% set _input=%INPUT_DIR%\%_base%\%2\%3-%1-bin.7z
+set _installable_package=%1
+set _base=%2
+set _name=%2
+set _ver=%3
+if not "_%4"=="_" (
+	set _base=%4\%_base%
+	set _name=%2-%4
+)
+set _input=%INPUT_DIR%\%_base%\%3\%2-bin.7z
+if not exist %_input% set _input=%INPUT_DIR%\%_base%\%3\%4-%2-bin.7z
 set _output=%OUTPUT_DIR%\%_base%
 if not exist %_input% (
-	set _input=%INPUT_DIR%\%1\%2\%1-%3-bin.7z
-	set _output=%OUTPUT_DIR%\%1\%1-%3
-	set _ver=%2-%3
+	set _input=%INPUT_DIR%\%2\%3\%2-%4-bin.7z
+	set _output=%OUTPUT_DIR%\%2\%2-%4
+	set _name=%2-%4
 )
-if not "_%4"=="_" (
-	set _input=%INPUT_DIR%\%_base%\%2\%1-%4-bin.7z
-	set _output=%OUTPUT_DIR%\%3\%1-%4
-	set _ver=%2-%3
+if not "$%4"=="$" (
+	if not "#%5"=="#" (
+		set _input=%INPUT_DIR%\%_base%\%3\%2-%5-bin.7z
+		set _output=%OUTPUT_DIR%\%4\%2-%5
+		set _name=%2-%4::%5
+	)
 )
 if exist %_input% (
-	echo   Unpacking %1 ^(%_ver%^) ...
+	call :log * Unpacking %_name% ^(%_ver%^) ...
 	%SEVENZIP% x "%_input%" -o"%_output%" -y >> %LOG_FILE% 2>&1
+	if "$%_installable_package%"=="$1" (		
+		copy %_input% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+	)
 )
 goto :EOF
