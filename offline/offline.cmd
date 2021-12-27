@@ -28,7 +28,7 @@ call :trim GIT
 call :trim PYTHON
 call :trim SEVENZIP
 call :trim SEVENZIP_COMPRESSION_LEVEL
-call :trim OUTPUT_DIR
+call :trim SETUP_OUTPUT_DIR
 call :trim KALLISTI_URL
 call :trim KALLISTI_PORTS_URL
 call :trim DREAMCAST_TOOL_SERIAL_URL
@@ -47,8 +47,8 @@ call :get_temp_working_dir DreamSDK-Offline-Working INPUT_DIR
 if not exist "%INPUT_DIR%" mkdir %INPUT_DIR%
 
 rem Output Directory
-if not exist "%OUTPUT_DIR%" goto err_output_dir
-set OUTPUT_DIR=%OUTPUT_DIR%\.sources
+if not exist "%SETUP_OUTPUT_DIR%" goto err_output_dir
+set OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.sources
 if not exist "%OUTPUT_DIR%" mkdir %OUTPUT_DIR%
 
 rem KallistiOS Directories
