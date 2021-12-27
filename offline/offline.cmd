@@ -43,9 +43,8 @@ set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 
 rem Input Directory
-set INPUT_DIR=%BASE_DIR%\.working
+call :get_temp_working_dir DreamSDK-Offline-Working INPUT_DIR
 if not exist "%INPUT_DIR%" mkdir %INPUT_DIR%
-attrib +H "%INPUT_DIR%"
 
 rem Output Directory
 if not exist "%OUTPUT_DIR%" goto err_output_dir
@@ -217,9 +216,9 @@ call :log
 goto end
 
 :end
-call :remove_dir_tree %INPUT_DIR%
 popd
 pause
+call :remove_dir_tree %INPUT_DIR%
 goto :EOF
 
 rem ## Errors ##################################################################
@@ -419,3 +418,17 @@ set _cmdfound=0
 for %%x in (%_exec%) do if not [%%~$PATH:x]==[] set _cmdfound=1
 endlocal & set "%~2=%_cmdfound%"
 goto :EOF
+
+:get_temp_working_dir
+rem Thanks dbenham: https://superuser.com/a/776801
+setlocal EnableDelayedExpansion
+set _chars=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+:get_temp_working_dir_retry
+set "_name="
+for /l %%N in (1 1 8) do (
+  set /a I=!random!%%36
+  for %%I in (!I!) do set "_name=!_name!!_chars:~%%I,1!"
+)
+set "_name=%TEMP%\%1-%_name%"
+if exist %_name% goto get_temp_working_dir_retry
+endlocal & set "%~2=%_name%" 
