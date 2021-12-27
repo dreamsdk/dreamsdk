@@ -19,28 +19,18 @@ if "$%DREAMSDK_HOME%"=="$" goto err_dreamsdk_missing
 rem Read Configuration
 set CONFIG_FILE=%BASE_DIR%\offline.ini
 if not exist "%CONFIG_FILE%" goto err_config
-for /F "tokens=*" %%i in (%CONFIG_FILE%) do (
-	set %%i 2> nul
+for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
+  set %%i 2> nul
+  rem Sanitize configuration entry
+  for /f "tokens=1 delims==" %%j in ("%%i") do (
+    call :trim %%j
+  )
 )
 
-rem Sanitize configuration entries
-call :trim GIT
-call :trim PYTHON
-call :trim SEVENZIP
-call :trim SEVENZIP_COMPRESSION_LEVEL
-call :trim SETUP_OUTPUT_DIR
-call :trim KALLISTI_URL
-call :trim KALLISTI_PORTS_URL
-call :trim DREAMCAST_TOOL_SERIAL_URL
-call :trim DREAMCAST_TOOL_INTERNET_PROTOCOL_URL
-call :trim RUBY_URL
-call :trim RUBY_SAMPLE_DREAMPRESENT_URL
-call :trim RUBY_SAMPLE_MRBTRIS_URL
-
 rem Utilities
-set PYREPL="%PYTHON%" "%BASE_DIR%\data\pyrepl.py"
-set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
+set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
+set PYREPL="%PYTHON%" "%BASE_DIR%\data\pyrepl.py"
 
 rem Input Directory
 call :get_temp_working_dir DreamSDK-Offline-Working INPUT_DIR
