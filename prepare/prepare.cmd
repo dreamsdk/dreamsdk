@@ -1,4 +1,4 @@
-@echo off
+rem @echo off
 set APP_TITLE=Source Packages Preparer for DreamSDK Setup
 title %APP_TITLE%
 cls
@@ -19,56 +19,45 @@ if "$%DREAMSDK_HOME%"=="$" goto err_dreamsdk_missing
 rem Read Configuration
 set CONFIG_FILE=%BASE_DIR%\prepare.template.ini
 if not exist "%CONFIG_FILE%" goto err_config
-for /F "tokens=*" %%i in (%CONFIG_FILE%) do (
+for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   set %%i 2> nul
+  rem Sanitize configuration entry
+  for /f "tokens=1 delims==" %%j in ("%%i") do (
+    call :trim %%j
+  )
 )
 
-rem Sanitize configuration entries
-call :trim SETUP_PACKAGES_INPUT_DIR
-call :trim SYSTEM_OBJECTS_INPUT_DIR
-call :trim OUTPUT_DIR
-call :trim SEVENZIP
-call :trim MINGW_BASE_VERSION
-call :trim MSYS_BASE_CURL_VERSION
-call :trim MSYS_BASE_GAWK_VERSION
-call :trim MSYS_BASE_LIBJPEG_VERSION
-call :trim MSYS_BASE_LIBPNG_VERSION
-call :trim MSYS_BASE_MINTTY_VERSION
-call :trim MSYS_BASE_WGET_VERSION
-call :trim TOOLCHAIN_STABLE_ARM_EABI_VERSION
-call :trim TOOLCHAIN_STABLE_SH_ELF_VERSION
-call :trim TOOLCHAIN_EXPERIMENTAL_ARM_EABI_VERSION
-call :trim TOOLCHAIN_EXPERIMENTAL_SH_ELF_VERSION
-call :trim SH_ELF_GDB_VERSION
-call :trim ADDONS_CMD_ELEVATE_VERSION
-call :trim ADDONS_CMD_PVR2PNG_VERSION
-call :trim ADDONS_CMD_TXFUTILS_VERSION
-call :trim ADDONS_CMD_VMUTOOL_VERSION
-call :trim ADDONS_GUI_BDREAMS_VERSION
-call :trim ADDONS_GUI_BUILDSBI_VERSION
-call :trim ADDONS_GUI_CHECKER_VERSION
-call :trim ADDONS_GUI_IPWRITER_VERSION
-call :trim ADDONS_GUI_MRWRITER_VERSION
-call :trim ADDONS_GUI_SBINDUCR_VERSION
-call :trim ADDONS_GUI_VMUTOOL_VERSION
-
 rem Utilities
-::set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
+::set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 
 rem Input Directory
+if not exist "%CODEBLOCKS_PATCHER_INPUT_DIR%" goto err_input_dir
+if not exist "%DOCUMENTATION_INPUT_DIR%" goto err_input_dir
+if not exist "%DREAMSDK_MANAGER_INPUT_DIR%" goto err_input_dir
+if not exist "%DREAMSDK_RUNNER_INPUT_DIR%" goto err_input_dir
+if not exist "%DREAMSDK_SHELL_INPUT_DIR%" goto err_input_dir
+if not exist "%HELPERS_INPUT_DIR%" goto err_input_dir
+if not exist "%SETUP_PACKAGES_INPUT_DIR%" goto err_input_dir
+if not exist "%SYSTEM_OBJECTS_INPUT_DIR%" goto err_input_dir
 if not exist "%SETUP_PACKAGES_INPUT_DIR%" goto err_input_dir 
 if not exist "%SYSTEM_OBJECTS_INPUT_DIR%" goto err_input_dir
 
 rem Output Directory
-if not exist "%OUTPUT_DIR%" goto err_output_dir
-set OUTPUT_DIR=%OUTPUT_DIR%\.sources
+if not exist "%SETUP_OUTPUT_DIR%" goto err_output_dir
+
+set OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.sources
 if not exist "%OUTPUT_DIR%" mkdir %OUTPUT_DIR%
+
+set HELPERS_OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.helpers
+if not exist "%HELPERS_OUTPUT_DIR%" mkdir %HELPERS_OUTPUT_DIR%
 
 set BIN_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\binary-packages
 
 :start
 pushd .
+
+goto setup_helpers
 
 :lib_embedded
 call :log Checking embedded libraries...
@@ -161,7 +150,13 @@ if not exist %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE% (
 )
 call :patch %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% %SYSTEM_OBJECTS_INPUT_DIR%\patches\etc.diff
 
-goto end
+:setup_helpers
+call :log Copying Setup Helpers...
+call :copysetuphelper cbhelper
+call :copysetuphelper pecheck
+
+:dreamsdk_binaries
+
 
 :end
 popd
@@ -275,6 +270,20 @@ if exist %_input% (
     copy %_input% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
   )
 )
+endlocal
+goto :EOF
+
+:copysetuphelper
+setlocal EnableDelayedExpansion
+set _setup_helper_name=%1
+call :log * Copying Setup Helper: %_setup_helper_name% ...
+set _setup_helper_bin=%BASE_DIR%\..\embedded\%_setup_helper_name%\bin\%_setup_helper_name%.exe
+if not exist "%_setup_helper_bin%" (
+  call :err ** Missing Setup Helper: %_setup_helper_name%
+  call :log ** Please build it in RELEASE mode using Lazarus IDE.
+  goto end
+)
+copy %_setup_helper_bin% %HELPERS_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 endlocal
 goto :EOF
 
