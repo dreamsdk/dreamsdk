@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 set APP_TITLE=Source Packages Preparer for DreamSDK Setup
 title %APP_TITLE%
 cls
@@ -34,13 +34,11 @@ set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 rem Input Directory
 if not exist "%CODEBLOCKS_PATCHER_INPUT_DIR%" goto err_input_dir
 if not exist "%DOCUMENTATION_INPUT_DIR%" goto err_input_dir
-if not exist "%DREAMSDK_MANAGER_INPUT_DIR%" goto err_input_dir
-if not exist "%DREAMSDK_RUNNER_INPUT_DIR%" goto err_input_dir
-if not exist "%DREAMSDK_SHELL_INPUT_DIR%" goto err_input_dir
 if not exist "%HELPERS_INPUT_DIR%" goto err_input_dir
+if not exist "%MANAGER_INPUT_DIR%" goto err_input_dir
+if not exist "%RUNNER_INPUT_DIR%" goto err_input_dir
 if not exist "%SETUP_PACKAGES_INPUT_DIR%" goto err_input_dir
-if not exist "%SYSTEM_OBJECTS_INPUT_DIR%" goto err_input_dir
-if not exist "%SETUP_PACKAGES_INPUT_DIR%" goto err_input_dir 
+if not exist "%SHELL_INPUT_DIR%" goto err_input_dir
 if not exist "%SYSTEM_OBJECTS_INPUT_DIR%" goto err_input_dir
 
 rem Output Directory
@@ -49,15 +47,13 @@ if not exist "%SETUP_OUTPUT_DIR%" goto err_output_dir
 set OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.sources
 if not exist "%OUTPUT_DIR%" mkdir %OUTPUT_DIR%
 
-set HELPERS_OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.helpers
-if not exist "%HELPERS_OUTPUT_DIR%" mkdir %HELPERS_OUTPUT_DIR%
+set BIN_OUTPUT_DIR=%OUTPUT_DIR%\dreamsdk-binaries
+if not exist "%BIN_OUTPUT_DIR%" mkdir %BIN_OUTPUT_DIR%
 
 set BIN_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\binary-packages
 
 :start
 pushd .
-
-goto setup_helpers
 
 :lib_embedded
 call :log Checking embedded libraries...
@@ -85,6 +81,7 @@ call :unpack %NOT_INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% gawk %MSYS_BASE_GAWK_VE
 call :unpack %NOT_INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% libjpeg %MSYS_BASE_LIBJPEG_VERSION% msys-base
 call :unpack %NOT_INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% libpng %MSYS_BASE_LIBPNG_VERSION% msys-base
 call :unpack %NOT_INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% mintty %MSYS_BASE_MINTTY_VERSION% msys-base
+call :unpack %NOT_INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% msys-core-extended %MSYS_BASE_CORE_EXTENDED_VERSION% msys-base
 call :unpack %NOT_INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% wget %MSYS_BASE_WGET_VERSION% msys-base
 
 rem Extracting Toolchains...
@@ -152,11 +149,33 @@ call :patch %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% %SYSTEM_OBJECTS_INPUT_DIR%
 
 :setup_helpers
 call :log Copying Setup Helpers...
-call :copysetuphelper cbhelper
-call :copysetuphelper pecheck
+set SETUP_HELPERS_OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.helpers
+if not exist "%SETUP_HELPERS_OUTPUT_DIR%" mkdir %SETUP_HELPERS_OUTPUT_DIR%
+call :copybinary cbhelper %BASE_DIR%\..\embedded %SETUP_HELPERS_OUTPUT_DIR%
+call :copybinary pecheck %BASE_DIR%\..\embedded %SETUP_HELPERS_OUTPUT_DIR%
+
+:dreamsdk_helpers
+call :log Copying Helpers...
+set HELPERS_OUTPUT_DIR=%BIN_OUTPUT_DIR%\helpers
+if not exist "%HELPERS_OUTPUT_DIR%" mkdir %HELPERS_OUTPUT_DIR%
+call :copybinary fastarp %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+call :copybinary fastping %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+call :copybinary ipreader %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+
+:dreamsdk_ide_patchers
+call :log Copying IDE Patchers...
+set CODEBLOCKS_PATCHER_OUTPUT_DIR=%BIN_OUTPUT_DIR%\packages\ide\codeblocks
+if not exist "%CODEBLOCKS_PATCHER_OUTPUT_DIR%" mkdir %CODEBLOCKS_PATCHER_OUTPUT_DIR%
+call :copybinary codeblocks-patcher %CODEBLOCKS_PATCHER_INPUT_DIR% %CODEBLOCKS_PATCHER_OUTPUT_DIR%
 
 :dreamsdk_binaries
+call :log Copying Binaries...
+call :copybinary dreamsdk-manager %MANAGER_INPUT_DIR% %BIN_OUTPUT_DIR%
+call :copybinary dreamsdk-shell %SHELL_INPUT_DIR% %BIN_OUTPUT_DIR%
+call :copybinary dreamsdk-runner %RUNNER_INPUT_DIR% %BIN_OUTPUT_DIR%
 
+call :log
+call :log Done!
 
 :end
 popd
@@ -267,23 +286,26 @@ if exist %_input% (
   call :log * Unpacking %_name% ^(%_ver%^) ...  
   %SEVENZIP% x "%_input%" -o"%_output%" -y >> %LOG_FILE% 2>&1
   if "$%_installable_package%"=="$1" (    
-    copy %_input% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+    copy /B %_input% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
   )
 )
 endlocal
 goto :EOF
 
-:copysetuphelper
+:copybinary
 setlocal EnableDelayedExpansion
-set _setup_helper_name=%1
-call :log * Copying Setup Helper: %_setup_helper_name% ...
-set _setup_helper_bin=%BASE_DIR%\..\embedded\%_setup_helper_name%\bin\%_setup_helper_name%.exe
-if not exist "%_setup_helper_bin%" (
-  call :err ** Missing Setup Helper: %_setup_helper_name%
+set _name=%1
+set _src=%2
+set _target=%3
+call :log * Copying Binary: %_name% ...
+set _binary=%_src%\%_name%\bin\%_name%.exe
+if not exist "%_binary%" set _binary=%_src%\bin\%_name%.exe
+if not exist "%_binary%" (
+  call :err ** Missing Binary: %_name%
   call :log ** Please build it in RELEASE mode using Lazarus IDE.
   goto end
 )
-copy %_setup_helper_bin% %HELPERS_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+copy /B %_binary% %_target% >> %LOG_FILE% 2>&1
 endlocal
 goto :EOF
 
