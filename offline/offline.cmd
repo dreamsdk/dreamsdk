@@ -210,8 +210,8 @@ goto end
 
 :end
 popd
-pause
 call :remove_dir_tree %INPUT_DIR%
+pause
 goto :EOF
 
 rem ## Errors ##################################################################
