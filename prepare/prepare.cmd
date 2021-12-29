@@ -18,7 +18,7 @@ rem Check if DreamSDK is installed (of course, you can use a previous version!)
 if "$%DREAMSDK_HOME%"=="$" goto err_dreamsdk_missing
 
 rem Read Configuration
-set CONFIG_FILE=%BASE_DIR%\prepare.template.ini
+set CONFIG_FILE=%BASE_DIR%\prepare.ini
 if not exist "%CONFIG_FILE%" goto err_config
 for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   set %%i 2> nul
