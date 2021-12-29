@@ -30,7 +30,7 @@ for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
 
 rem Utilities
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
-::set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
+set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
 
 rem Input Directory
 if not exist "%CODEBLOCKS_PATCHER_INPUT_DIR%" goto err_input_dir
@@ -52,6 +52,19 @@ set BIN_OUTPUT_DIR=%OUTPUT_DIR%\dreamsdk-binaries
 if not exist "%BIN_OUTPUT_DIR%" mkdir %BIN_OUTPUT_DIR%
 
 set BIN_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\binary-packages
+
+:check_sevenzip
+if not exist %SEVENZIP% goto err_binary_sevenzip
+
+:check_upx
+if not exist %UPX32% goto err_binary_upx
+
+:check_python
+set PYTHON_VERSION_MAJOR=
+set PYTHON_VERSION=
+call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
+if "$%PYTHON_VERSION_MAJOR%"=="$3" goto start
+goto err_binary_python
 
 :start
 pushd .
@@ -214,8 +227,20 @@ goto end
 call :err Please install DreamSDK before using this script.
 goto end
 
+:err_binary_sevenzip
+call :err 7-Zip was not found in your PATH.
+goto end
+
+:err_binary_python
+call :err Python 3 was not found in your PATH.
+goto end
+
+:err_binary_upx
+call :err UPX was not found in your PATH.
+goto end
+
 :err_offline
-call :err Missing embedded/offline files. Please run the `Offline` script.	
+call :err Missing embedded/offline files. Please run the "Offline" script.	
 goto end
 
 :err_help_missing
@@ -244,6 +269,10 @@ goto :EOF
 
 :patch
 %PATCH% -N -d %1 -p1 -r - < %2 >> %LOG_FILE% 2>&1
+goto :EOF
+
+:warn
+call :log WARNING: %*
 goto :EOF
 
 :err
@@ -305,6 +334,9 @@ if exist %_input% (
     copy /B %_input% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
   )
 )
+if not exist %_input% (
+  call :warn Package not found: %_name% ^(%_ver%^)
+)
 endlocal
 goto :EOF
 
@@ -322,5 +354,65 @@ if not exist "%_binary%" (
   goto end
 )
 copy /B %_binary% %_target% >> %LOG_FILE% 2>&1
+:copybinarycheck
+set _mode=
+set _tmpfile=%_name%.tmp
+%RELMODE% %_binary% > %_tmpfile%
+if exist "%_tmpfile%" (
+  set /p _mode=<%_tmpfile%
+  del %_tmpfile%
+)
+if "+%_mode%"=="+DEBUG" goto copybinarycheckdebug
+if "+%_mode%"=="+RELEASE" goto copybinarycompress
+call :warn Undefined mode for %_name%: %_mode%
+goto copybinarycompress
+:copybinarycheckdebug
+call :warn %_name% is compiled in DEBUG mode...
+:copybinarycompress
+%UPX32% -9 %_binary% >> %LOG_FILE% 2>&1
 endlocal
+goto :EOF
+
+:get_version_python
+rem Check if Python is installed and retrieve the version (incl. Major Version)
+rem Usage: call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
+setlocal EnableDelayedExpansion
+set _python_exec=%PYTHON%
+set _python_installed=0
+set _python_version_major=
+set _python_version=
+set _python_buffer_temp=%_python_exec%_buffer.tmp
+if exist %_python_exec% goto get_version_python_check
+call :check_command %_python_exec% _python_installed
+if "%_python_installed%"=="0" goto get_version_python_exit
+:get_version_python_check
+%_python_exec% --version > %_python_buffer_temp% 2>&1
+set /p _cmd_raw_output=<%_python_buffer_temp%
+if "%_cmd_raw_output:~0,6%"=="Python" goto get_version_python_install
+:get_version_python_install
+for /f "tokens=2 delims= " %%V in ('type %_python_buffer_temp%') do (
+  set _python_version=%%V
+)
+set "_python_version_major=%_python_version:~0,1%"
+:get_version_python_exit
+if exist %_python_buffer_temp% del %_python_buffer_temp%
+endlocal & (
+	set "%~1=%_python_version_major%"
+	set "%~2=%_python_version%"
+)
+goto :EOF
+
+:check_command
+rem Thanks Joey: https://superuser.com/a/175831
+rem Warning: _exec should be the name of the executable to check WITH its extension (e.g., ".exe")
+setlocal EnableDelayedExpansion
+set _exec=%1
+set _cmdfound=0
+for %%x in (%_exec%) do if not [%%~$PATH:x]==[] set _cmdfound=1
+if "%_cmdfound%"=="1" goto check_command_exit
+rem Try with the ".exe" extension
+set _exec=%_exec%.exe
+for %%x in (%_exec%) do if not [%%~$PATH:x]==[] set _cmdfound=1
+:check_command_exit
+endlocal & set "%~2=%_cmdfound%"
 goto :EOF
