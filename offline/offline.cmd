@@ -217,29 +217,32 @@ goto :EOF
 rem ## Errors ##################################################################
 
 :err_config
-call :log The configuration file was not found.
+call :err The configuration file was not found.
 call :log File: "%CONFIG_FILE%"
 goto end
 
 :err_output_dir
-call :log The specified output directory (OUTPUT_DIR) was not found.
-call :log Directory: "%OUTPUT_DIR%"
+call :err The specified output directory (SETUP_OUTPUT_DIR) was not found.
+call :log Directory: "%SETUP_OUTPUT_DIR%"
 goto end
 
 :err_binary_python
-call :log Python 3 was not found in your PATH.
+call :err Python 3 was not found.
+call :log File: "%PYTHON%"
 goto end
 
 :err_binary_git
-call :log Git was not found in your PATH.
+call :err Git was not found.
+call :log File: "%GIT%"
 goto end
 
 :err_binary_sevenzip
-call :log 7-Zip was not found in your PATH.
+call :err 7-Zip was not found.
+call :log File: "%SEVENZIP%"
 goto end
 
 :err_dreamsdk_missing
-call :log Please install DreamSDK before using this script.
+call :err Please install DreamSDK before using this script.
 goto end
 
 rem ## Utilities ###############################################################
@@ -331,6 +334,14 @@ goto :EOF
 %PATCH% --no-backup-if-mismatch --ignore-whitespace --fuzz 3 --reverse -N -d %1 -p1 -r - < %2 >> %LOG_FILE% 2>&1
 goto :EOF
 
+:warn
+call :log WARNING: %*
+goto :EOF
+
+:err
+call :log ERROR: %*
+goto :EOF
+
 :log
 set tmplog=%*
 if "%tmplog%"=="" goto logempty
@@ -362,7 +373,7 @@ setlocal EnableDelayedExpansion
 set _git_exec=%GIT%
 set _git_installed=0
 set _git_version=
-set _git_buffer_temp=%_git_exec%_buffer.tmp
+set _git_buffer_temp=gitver.tmp
 if exist %_git_exec% goto get_version_git_check
 call :check_command %_git_exec% _git_installed
 if "%_git_installed%"=="0" goto get_version_git_exit
@@ -389,7 +400,7 @@ set _python_exec=%PYTHON%
 set _python_installed=0
 set _python_version_major=
 set _python_version=
-set _python_buffer_temp=%_python_exec%_buffer.tmp
+set _python_buffer_temp=pythonver.tmp
 if exist %_python_exec% goto get_version_python_check
 call :check_command %_python_exec% _python_installed
 if "%_python_installed%"=="0" goto get_version_python_exit
