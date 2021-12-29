@@ -215,12 +215,12 @@ call :log File: "%CONFIG_FILE%"
 goto end
 
 :err_input_dir
-call :err Please check all the input directories.
+call :err Please check all input directories.
 goto end
 
 :err_output_dir
-call :err The specified output directory (OUTPUT_DIR) was not found.
-call :log Directory: "%OUTPUT_DIR%"
+call :err The specified output directory (SETUP_OUTPUT_DIR) was not found.
+call :log Directory: "%SETUP_OUTPUT_DIR%"
 goto end
 
 :err_dreamsdk_missing
@@ -228,23 +228,28 @@ call :err Please install DreamSDK before using this script.
 goto end
 
 :err_binary_sevenzip
-call :err 7-Zip was not found in your PATH.
+call :err 7-Zip was not found.
+call :log File: "%SEVENZIP%"
 goto end
 
 :err_binary_python
-call :err Python 3 was not found in your PATH.
+call :err Python 3 was not found.
+call :log File: "%PYTHON%"
 goto end
 
 :err_binary_upx
-call :err UPX was not found in your PATH.
+call :err UPX 32-bit was not found.
+call :log File: "%UPX32%"
 goto end
 
 :err_offline
-call :err Missing embedded/offline files. Please run the "Offline" script.	
+call :err Missing embedded/offline files. Please run the "Offline" script.
+call :log This script is located in "setup-helpers" as well.
 goto end
 
 :err_help_missing
-call :err Missing Help CHM file. Please build it using KEL CHM Creator.
+call :err Missing Help CHM file. Please build it using "KEL CHM Creator".
+call :log Please read the "documentation" repository for more information.
 goto end
 
 rem ## Utilities ###############################################################
@@ -381,7 +386,7 @@ set _python_exec=%PYTHON%
 set _python_installed=0
 set _python_version_major=
 set _python_version=
-set _python_buffer_temp=%_python_exec%_buffer.tmp
+set _python_buffer_temp=pythonver.tmp
 if exist %_python_exec% goto get_version_python_check
 call :check_command %_python_exec% _python_installed
 if "%_python_installed%"=="0" goto get_version_python_exit
