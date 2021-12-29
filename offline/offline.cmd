@@ -13,6 +13,7 @@ if exist %LOG_FILE% del %LOG_FILE%
 call :log %APP_TITLE%
 call :log
 
+:init
 rem Check if DreamSDK is installed (of course, you can use a previous version!)
 if "$%DREAMSDK_HOME%"=="$" goto err_dreamsdk_missing
 
@@ -34,7 +35,6 @@ set PYREPL="%PYTHON%" "%BASE_DIR%\data\pyrepl.py"
 
 rem Input Directory
 call :get_temp_working_dir DreamSDK-Offline-Working INPUT_DIR
-if not exist "%INPUT_DIR%" mkdir %INPUT_DIR%
 
 rem Output Directory
 if not exist "%SETUP_OUTPUT_DIR%" goto err_output_dir
@@ -72,27 +72,30 @@ set RUBY_MRBTRIS_OUTPUT_DIR=%RUBY_SAMPLES_OUTPUT_DIR%\mrbtris
 rem Source Packages Directory
 set SOURCE_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\source-packages
 
-:start
-pushd .
-
-:check_python
-set PYTHON_VERSION_MAJOR=
-set PYTHON_VERSION=
-call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
-if "$%PYTHON_VERSION_MAJOR%"=="$3" goto check_git
-goto err_binary_python
+rem Create missing Input directories
+if not exist %INPUT_DIR% mkdir %INPUT_DIR%
+if not exist %LIB_INPUT_DIR% mkdir %LIB_INPUT_DIR%
+if not exist %DCLOAD_INPUT_DIR% mkdir %DCLOAD_INPUT_DIR%
+if not exist %RUBY_INPUT_DIR% mkdir %RUBY_INPUT_DIR%
+if not exist %RUBY_SAMPLES_INPUT_DIR% mkdir %RUBY_SAMPLES_INPUT_DIR%
 
 :check_git
 set GIT_VERSION=
 call :get_version_git GIT_VERSION
 if "$%GIT_VERSION%"=="$" goto err_binary_git
 
-:checkinputdirs
-if not exist %INPUT_DIR% mkdir %INPUT_DIR%
-if not exist %LIB_INPUT_DIR% mkdir %LIB_INPUT_DIR%
-if not exist %DCLOAD_INPUT_DIR% mkdir %DCLOAD_INPUT_DIR%
-if not exist %RUBY_INPUT_DIR% mkdir %RUBY_INPUT_DIR%
-if not exist %RUBY_SAMPLES_INPUT_DIR% mkdir %RUBY_SAMPLES_INPUT_DIR%
+:check_sevenzip
+if not exist %SEVENZIP% goto err_binary_sevenzip
+
+:check_python
+set PYTHON_VERSION_MAJOR=
+set PYTHON_VERSION=
+call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
+if "$%PYTHON_VERSION_MAJOR%"=="$3" goto start
+goto err_binary_python
+
+:start
+pushd .
 
 rem KallistiOS
 :kos
@@ -231,6 +234,10 @@ goto end
 call :log Git was not found in your PATH.
 goto end
 
+:err_binary_sevenzip
+call :log 7-Zip was not found in your PATH.
+goto end
+
 :err_dreamsdk_missing
 call :log Please install DreamSDK before using this script.
 goto end
@@ -352,12 +359,14 @@ goto :EOF
 rem Check if Git is installed
 rem Usage: call :get_version_git GIT_VERSION
 setlocal EnableDelayedExpansion
-set _git_exec=git.exe
+set _git_exec=%GIT%
 set _git_installed=0
 set _git_version=
 set _git_buffer_temp=%_git_exec%_buffer.tmp
+if exist %_git_exec% goto get_version_git_check
 call :check_command %_git_exec% _git_installed
 if "%_git_installed%"=="0" goto get_version_git_exit
+:get_version_git_check
 %_git_exec% --version > %_git_buffer_temp% 2>&1
 set /p _cmd_raw_output=<%_git_buffer_temp%
 if "%_cmd_raw_output:~0,11%"=="git version" goto get_version_git_install
@@ -376,13 +385,15 @@ goto :EOF
 rem Check if Python is installed and retrieve the version (incl. Major Version)
 rem Usage: call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
 setlocal EnableDelayedExpansion
-set _python_exec=python.exe
+set _python_exec=%PYTHON%
 set _python_installed=0
 set _python_version_major=
 set _python_version=
 set _python_buffer_temp=%_python_exec%_buffer.tmp
+if exist %_python_exec% goto get_version_python_check
 call :check_command %_python_exec% _python_installed
 if "%_python_installed%"=="0" goto get_version_python_exit
+:get_version_python_check
 %_python_exec% --version > %_python_buffer_temp% 2>&1
 set /p _cmd_raw_output=<%_python_buffer_temp%
 if "%_cmd_raw_output:~0,6%"=="Python" goto get_version_python_install
@@ -406,6 +417,11 @@ setlocal EnableDelayedExpansion
 set _exec=%1
 set _cmdfound=0
 for %%x in (%_exec%) do if not [%%~$PATH:x]==[] set _cmdfound=1
+if "%_cmdfound%"=="1" goto check_command_exit
+rem Try with the ".exe" extension
+set _exec=%_exec%.exe
+for %%x in (%_exec%) do if not [%%~$PATH:x]==[] set _cmdfound=1
+:check_command_exit
 endlocal & set "%~2=%_cmdfound%"
 goto :EOF
 
