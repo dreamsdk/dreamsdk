@@ -392,7 +392,7 @@ if exist %_input% (
     copy /B %_input% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
   )
 )
-if "%_warn_if_package_not_found%"=="1" goto unpack_exit
+if "%_warn_if_package_not_found%"=="0" goto unpack_exit
 if not exist %_input% (
   call :warn Package not found: %_name% ^(%_ver%^)
 )
