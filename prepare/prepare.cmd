@@ -14,6 +14,9 @@ call :log %APP_TITLE%
 call :log
 
 :init
+rem Global boolean variable used in various locations
+set FUNC_RESULT=0
+
 rem Check if DreamSDK is installed (of course, you can use a previous version!)
 if "$%DREAMSDK_HOME%"=="$" goto err_dreamsdk_missing
 
@@ -32,34 +35,61 @@ rem Utilities
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
 
-rem Input Directory
-if not exist "%CODEBLOCKS_PATCHER_INPUT_DIR%" goto err_input_dir
-if not exist "%DOCUMENTATION_INPUT_DIR%" goto err_input_dir
-if not exist "%HELPERS_INPUT_DIR%" goto err_input_dir
-if not exist "%MANAGER_INPUT_DIR%" goto err_input_dir
-if not exist "%RUNNER_INPUT_DIR%" goto err_input_dir
-if not exist "%SETUP_PACKAGES_INPUT_DIR%" goto err_input_dir
-if not exist "%SHELL_INPUT_DIR%" goto err_input_dir
-if not exist "%SYSTEM_OBJECTS_INPUT_DIR%" goto err_input_dir
+rem Input directories
+call :checkdir %CODEBLOCKS_PATCHER_INPUT_DIR% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
-rem Output Directory
-if not exist "%SETUP_OUTPUT_DIR%" goto err_output_dir
+call :checkdir %DOCUMENTATION_INPUT_DIR% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
+call :checkdir %HELPERS_INPUT_DIR% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_input_dir
+
+call :checkdir %MANAGER_INPUT_DIR% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_input_dir
+
+call :checkdir %RUNNER_INPUT_DIR% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_input_dir
+
+call :checkdir %SETUP_PACKAGES_INPUT_DIR% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_input_dir
+
+call :checkdir %SHELL_INPUT_DIR% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_input_dir
+
+call :checkdir %SYSTEM_OBJECTS_INPUT_DIR% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_input_dir
+
+rem Output directory
+call :checkdir %SETUP_OUTPUT_DIR% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_output_dir
+
+rem Handling directory: .sources
 set OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.sources
-if not exist "%OUTPUT_DIR%" mkdir %OUTPUT_DIR%
+call :checkdir %OUTPUT_DIR% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
+rem Handling directory: dreamsdk-binaries 
 set BIN_OUTPUT_DIR=%OUTPUT_DIR%\dreamsdk-binaries
-if not exist "%BIN_OUTPUT_DIR%" mkdir %BIN_OUTPUT_DIR%
+call :checkdir %BIN_OUTPUT_DIR% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
+rem Handling directory: binary-packages
 set BIN_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\binary-packages
+call :checkdir %BIN_PACKAGES_OUTPUT_DIR% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
 :check_sevenzip
-if not exist %SEVENZIP% goto err_binary_sevenzip
+call :checkfile %SEVENZIP% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_binary_sevenzip
 
 :check_upx
-if not exist %UPX32% goto err_binary_upx
+call :checkfile %UPX32% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_binary_upx
 
 :check_python
+call :checkfile %PYTHON% FUNC_RESULT
+if "+%FUNC_RESULT%"=="+0" goto err_binary_python
 set PYTHON_VERSION_MAJOR=
 set PYTHON_VERSION=
 call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
@@ -87,44 +117,62 @@ if not exist %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CON
 :setup_helpers
 call :log Copying Setup Helpers...
 set SETUP_HELPERS_OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.helpers
-if not exist "%SETUP_HELPERS_OUTPUT_DIR%" mkdir %SETUP_HELPERS_OUTPUT_DIR%
-call :copybinary cbhelper %BASE_DIR%\..\embedded %SETUP_HELPERS_OUTPUT_DIR%
-call :copybinary pecheck %BASE_DIR%\..\embedded %SETUP_HELPERS_OUTPUT_DIR%
+if not exist %SETUP_HELPERS_OUTPUT_DIR% mkdir %SETUP_HELPERS_OUTPUT_DIR%
+
+call :copybinary FUNC_RESULT cbhelper %BASE_DIR%\..\embedded %SETUP_HELPERS_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :copybinary FUNC_RESULT pecheck %BASE_DIR%\..\embedded %SETUP_HELPERS_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_helpers
 call :log Copying Helpers...
 set HELPERS_OUTPUT_DIR=%BIN_OUTPUT_DIR%\helpers
-if not exist "%HELPERS_OUTPUT_DIR%" mkdir %HELPERS_OUTPUT_DIR%
-call :copybinary fastarp %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
-call :copybinary fastping %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
-call :copybinary ipreader %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+if not exist %HELPERS_OUTPUT_DIR% mkdir %HELPERS_OUTPUT_DIR%
+
+call :copybinary FUNC_RESULT fastarp %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :copybinary FUNC_RESULT fastping %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :copybinary FUNC_RESULT ipreader %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_ide_patchers
 call :log Copying IDE Patchers...
 set CODEBLOCKS_PATCHER_OUTPUT_DIR=%BIN_OUTPUT_DIR%\packages\ide\codeblocks
-if not exist "%CODEBLOCKS_PATCHER_OUTPUT_DIR%" mkdir %CODEBLOCKS_PATCHER_OUTPUT_DIR%
-call :copybinary codeblocks-patcher %CODEBLOCKS_PATCHER_INPUT_DIR% %CODEBLOCKS_PATCHER_OUTPUT_DIR%
+if not exist %CODEBLOCKS_PATCHER_OUTPUT_DIR% mkdir %CODEBLOCKS_PATCHER_OUTPUT_DIR%
+
+call :copybinary FUNC_RESULT codeblocks-patcher %CODEBLOCKS_PATCHER_INPUT_DIR% %CODEBLOCKS_PATCHER_OUTPUT_DIR% "--compress-resources=0"
+if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_binaries
 call :log Copying Binaries...
-call :copybinary dreamsdk-manager %MANAGER_INPUT_DIR% %BIN_OUTPUT_DIR%
-call :copybinary dreamsdk-shell %SHELL_INPUT_DIR% %BIN_OUTPUT_DIR%
-call :copybinary dreamsdk-runner %RUNNER_INPUT_DIR% %BIN_OUTPUT_DIR%
+
+call :copybinary FUNC_RESULT dreamsdk-manager %MANAGER_INPUT_DIR% %BIN_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :copybinary FUNC_RESULT dreamsdk-shell %SHELL_INPUT_DIR% %BIN_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :copybinary FUNC_RESULT dreamsdk-runner %RUNNER_INPUT_DIR% %BIN_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_help
 call :log Copying Help...
 set HELP_INPUT_FILE=%DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm
-if not exist "%HELP_INPUT_FILE%" goto err_help_missing
+if not exist %HELP_INPUT_FILE% goto err_help_missing
 copy /B %HELP_INPUT_FILE% %BIN_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 
 :extract
 call :log Extracting packages...
-if not exist "%BIN_PACKAGES_OUTPUT_DIR%" mkdir %BIN_PACKAGES_OUTPUT_DIR%
 
 set NOT_INSTALLABLE_PACKAGE=0
 set INSTALLABLE_PACKAGE=1
 set INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT=2
 set NOT_INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT=3
+set INSTALLABLE_PACKAGE_OPTIONAL=4
 
 rem Extracting MinGW foundation base package
 call :unpack %NOT_INSTALLABLE_PACKAGE% mingw-base %MINGW_BASE_VERSION%
@@ -148,20 +196,20 @@ call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% arm-eabi %TOOLCHAIN_STABLE_
 call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% sh-elf %TOOLCHAIN_STABLE_SH_ELF_VERSION% toolchain-stable
 
 rem Extracting GNU Debugger (GDB)...
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% no-python
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% python-2.7
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.0
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.1
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.2
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.3
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.4
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.5
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.6
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.7
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.8
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.9
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.10
-call :unpack %INSTALLABLE_PACKAGE% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.11
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% no-python
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-2.7
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.0
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.1
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.2
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.3
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.4
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.5
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.6
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.7
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.8
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.9
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.10
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.11
 
 rem Extracting Addons Command-Line Tools
 call :unpack %NOT_INSTALLABLE_PACKAGE% elevate %ADDONS_CMD_ELEVATE_VERSION% addons-cmd
@@ -297,8 +345,9 @@ goto :EOF
 
 :unpack
 setlocal EnableDelayedExpansion
-set _extract_to_parent=0
 set _installable_package=%1
+set _extract_to_parent=0
+set _warn_if_package_not_found=1
 if "+%_installable_package%"=="+%INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT%" (
   set _installable_package=1
   set _extract_to_parent=1
@@ -306,6 +355,10 @@ if "+%_installable_package%"=="+%INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT%" (
 if "+%_installable_package%"=="+%NOT_INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT%" (
   set _installable_package=0
   set _extract_to_parent=1
+)
+if "%_installable_package%"=="%INSTALLABLE_PACKAGE_OPTIONAL%" (
+  set _installable_package=1
+  set _warn_if_package_not_found=0
 )
 set _base=%2
 set _name=%2
@@ -339,24 +392,29 @@ if exist %_input% (
     copy /B %_input% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
   )
 )
+if "%_warn_if_package_not_found%"=="1" goto unpack_exit
 if not exist %_input% (
   call :warn Package not found: %_name% ^(%_ver%^)
 )
+:unpack_exit
 endlocal
 goto :EOF
 
 :copybinary
 setlocal EnableDelayedExpansion
-set _name=%1
-set _src=%2
-set _target=%3
+set _result=1
+set _name=%2
+set _src=%3
+set _target=%4
+set _upx_optional_switches=%5
 call :log * Copying Binary: %_name% ...
 set _binary=%_src%\%_name%\bin\%_name%.exe
 if not exist "%_binary%" set _binary=%_src%\bin\%_name%.exe
 if not exist "%_binary%" (
   call :err Missing Binary: "%_name%".
   call :log Please build it in RELEASE mode using Lazarus IDE.
-  goto end
+  set _result=0
+  goto copybinaryexit
 )
 copy /B %_binary% %_target% >> %LOG_FILE% 2>&1
 :copybinarycheck
@@ -374,8 +432,11 @@ goto copybinarycompress
 :copybinarycheckdebug
 call :warn %_name% is compiled in DEBUG mode...
 :copybinarycompress
-%UPX32% -9 %_binary% >> %LOG_FILE% 2>&1
-endlocal
+%UPX32% -9 %_upx_optional_switches% %_target%\%_name%.exe >> %LOG_FILE% 2>&1
+:copybinaryexit
+endlocal & (
+	set "%~1=%_result%"	
+)
 goto :EOF
 
 :get_version_python
@@ -420,4 +481,26 @@ set _exec=%_exec%.exe
 for %%x in (%_exec%) do if not [%%~$PATH:x]==[] set _cmdfound=1
 :check_command_exit
 endlocal & set "%~2=%_cmdfound%"
+goto :EOF
+
+:checkdir
+setlocal EnableDelayedExpansion
+set _dirname=%1
+set _direxist=0
+if [%_dirname%]==[] goto checkdir_exit
+if not exist %_dirname% mkdir %_dirname%
+if exist %_dirname% set _direxist=1
+:checkdir_exit
+endlocal & set "%~2=%_direxist%"
+goto :EOF
+
+:checkfile
+setlocal EnableDelayedExpansion
+set _filepath=%1
+set _fileexist=0
+if [%_filepath%]==[] goto checkfile_exit
+if exist %_filepath% set _fileexist=1
+if "$%_fileexist%"=="$0" call :check_command %_filepath% _fileexist
+:checkfile_exit
+endlocal & set "%~2=%_fileexist%"
 goto :EOF
