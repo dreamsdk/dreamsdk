@@ -86,7 +86,6 @@ if "+%FUNC_RESULT%"=="+0" goto err_binary_sevenzip
 :check_upx
 call :checkfile FUNC_RESULT %UPX32%
 if "+%FUNC_RESULT%"=="+0" goto err_binary_upx
-pause
 
 :check_python
 call :checkfile FUNC_RESULT %PYTHON%
