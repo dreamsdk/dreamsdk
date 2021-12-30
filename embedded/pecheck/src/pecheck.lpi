@@ -18,8 +18,8 @@
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="1"/>
-      <BuildNr Value="23"/>
-      <StringTable Comments="http://dreamsdk.org/" CompanyName="The DreamSDK Team" FileDescription="Portable Executable Checker for DreamSDK" InternalName="pecheck.exe" LegalCopyright="© Copyleft 2018-2021" LegalTrademarks="Sega and Dreamcast are registered trademark of Sega Games Co., Ltd." OriginalFilename="pecheck.exe" ProductName="DreamSDK" ProductVersion="3.0.4.2106"/>
+      <BuildNr Value="25"/>
+      <StringTable Comments="https://dreamsdk.org/" CompanyName="The DreamSDK Team" FileDescription="Portable Executable Checker for DreamSDK" InternalName="pecheck.exe" LegalCopyright="© Copyleft 2018-2022" LegalTrademarks="Sega and Dreamcast are registered trademark of Sega Games Co., Ltd." OriginalFilename="pecheck.exe" ProductName="DreamSDK" ProductVersion="3.0.4.2106"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>
