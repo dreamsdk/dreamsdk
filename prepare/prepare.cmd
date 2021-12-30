@@ -36,59 +36,60 @@ set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
 
 rem Input directories
-call :checkdir %CODEBLOCKS_PATCHER_INPUT_DIR% FUNC_RESULT
+call :checkdir FUNC_RESULT %CODEBLOCKS_PATCHER_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
-call :checkdir %DOCUMENTATION_INPUT_DIR% FUNC_RESULT
+call :checkdir FUNC_RESULT %DOCUMENTATION_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
-call :checkdir %HELPERS_INPUT_DIR% FUNC_RESULT
+call :checkdir FUNC_RESULT %HELPERS_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
-call :checkdir %MANAGER_INPUT_DIR% FUNC_RESULT
+call :checkdir FUNC_RESULT %MANAGER_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
-call :checkdir %RUNNER_INPUT_DIR% FUNC_RESULT
+call :checkdir FUNC_RESULT %RUNNER_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
-call :checkdir %SETUP_PACKAGES_INPUT_DIR% FUNC_RESULT
+call :checkdir FUNC_RESULT %SETUP_PACKAGES_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
-call :checkdir %SHELL_INPUT_DIR% FUNC_RESULT
+call :checkdir FUNC_RESULT %SHELL_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
-call :checkdir %SYSTEM_OBJECTS_INPUT_DIR% FUNC_RESULT
+call :checkdir FUNC_RESULT %SYSTEM_OBJECTS_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
 rem Output directory
-call :checkdir %SETUP_OUTPUT_DIR% FUNC_RESULT
+call :checkdir FUNC_RESULT %SETUP_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
 rem Handling directory: .sources
 set OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.sources
-call :checkdir %OUTPUT_DIR% FUNC_RESULT
+call :checkdir FUNC_RESULT %OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
 rem Handling directory: dreamsdk-binaries 
 set BIN_OUTPUT_DIR=%OUTPUT_DIR%\dreamsdk-binaries
-call :checkdir %BIN_OUTPUT_DIR% FUNC_RESULT
+call :checkdir FUNC_RESULT %BIN_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
 rem Handling directory: binary-packages
 set BIN_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\binary-packages
-call :checkdir %BIN_PACKAGES_OUTPUT_DIR% FUNC_RESULT
+call :checkdir FUNC_RESULT %BIN_PACKAGES_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
 :check_sevenzip
-call :checkfile %SEVENZIP% FUNC_RESULT
+call :checkfile FUNC_RESULT %SEVENZIP%
 if "+%FUNC_RESULT%"=="+0" goto err_binary_sevenzip
 
 :check_upx
-call :checkfile %UPX32% FUNC_RESULT
+call :checkfile FUNC_RESULT %UPX32%
 if "+%FUNC_RESULT%"=="+0" goto err_binary_upx
+pause
 
 :check_python
-call :checkfile %PYTHON% FUNC_RESULT
+call :checkfile FUNC_RESULT %PYTHON%
 if "+%FUNC_RESULT%"=="+0" goto err_binary_python
 set PYTHON_VERSION_MAJOR=
 set PYTHON_VERSION=
@@ -485,22 +486,24 @@ goto :EOF
 
 :checkdir
 setlocal EnableDelayedExpansion
-set _dirname=%1
+set _dirname=%2
 set _direxist=0
 if [%_dirname%]==[] goto checkdir_exit
 if not exist %_dirname% mkdir %_dirname%
 if exist %_dirname% set _direxist=1
 :checkdir_exit
-endlocal & set "%~2=%_direxist%"
+endlocal & set "%~1=%_direxist%"
 goto :EOF
 
 :checkfile
 setlocal EnableDelayedExpansion
-set _filepath=%1
+set _filepath=%2
 set _fileexist=0
 if [%_filepath%]==[] goto checkfile_exit
 if exist %_filepath% set _fileexist=1
-if "$%_fileexist%"=="$0" call :check_command %_filepath% _fileexist
+if "$%_fileexist%"=="$0" (
+  call :check_command %_filepath% _fileexist
+)
 :checkfile_exit
-endlocal & set "%~2=%_fileexist%"
+endlocal & set "%~1=%_fileexist%"
 goto :EOF
