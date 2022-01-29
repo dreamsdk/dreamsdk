@@ -6,7 +6,8 @@ uses
   Windows,
   SysUtils,
   SysTools,
-  FSTools;
+  FSTools,
+  PEUtils;
 
 var
   ProgramName: string;
