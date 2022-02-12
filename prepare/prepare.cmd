@@ -407,15 +407,19 @@ set _name=%2
 set _src=%3
 set _target=%4
 set _upx_optional_switches=%5
-call :log * Copying Binary: %_name% ...
+call :log * Building Project: %_name% ...
+set _project=%_src%\%_name%\src\%_name%.lpi
 set _binary=%_src%\%_name%\bin\%_name%.exe
-if not exist "%_binary%" set _binary=%_src%\bin\%_name%.exe
-if not exist "%_binary%" (
-  call :err Missing Binary: "%_name%".
-  call :log Please build it in RELEASE mode using Lazarus IDE.
+if not exist "%_project%" (
+  set _project=%_src%\src\%_name%.lpi
+  set _binary=%_src%\bin\%_name%.exe
+)
+if not exist "%_project%" (
+  call :err Missing Project: "%_name%".
   set _result=0
   goto copybinaryexit
 )
+%LAZBUILD% %_project% --build-mode="Release" --verbose >> %LOG_FILE% 2>&1
 copy /B %_binary% %_target% >> %LOG_FILE% 2>&1
 :copybinarycheck
 set _mode=
