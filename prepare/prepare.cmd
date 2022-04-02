@@ -246,7 +246,8 @@ if not exist %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE% (
 	)
 	move %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 )
-call :patch %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% %SYSTEM_OBJECTS_INPUT_DIR%\patches\etc.diff
+call :patch FUNC_RESULT %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% %SYSTEM_OBJECTS_INPUT_DIR%\patches\etc.diff
+if "+%FUNC_RESULT%"=="+0" goto end
 
 :finish
 call :log
@@ -324,7 +325,18 @@ if exist %EXCLUDE_FILE% del %EXCLUDE_FILE%
 goto :EOF
 
 :patch
-%PATCH% -N -d %1 -p1 -r - < %2 >> %LOG_FILE% 2>&1
+setlocal EnableDelayedExpansion
+set _result=1
+set _target=%2
+set _patch=%3
+%PATCH% -N -d %_target% -p1 -r - < %_patch% >> %LOG_FILE% 2>&1
+if "%errorlevel%+"=="0+" goto patchexit
+call :err Failed Patch: "%_patch%".
+set _result=0
+:patchexit
+endlocal & (
+	set "%~1=%_result%"	
+)
 goto :EOF
 
 :warn
@@ -423,6 +435,11 @@ if not exist "%_project%" (
   goto copybinaryexit
 )
 %LAZBUILD% %_project% --build-mode="Release" --verbose >> %LOG_FILE% 2>&1
+if "$%errorlevel%"=="$0" goto copybinarybuild
+call :err Failing Building Project: "%_name%".
+set _result=0
+goto copybinaryexit  
+:copybinarybuild
 copy /B %_binary% %_target% >> %LOG_FILE% 2>&1
 :copybinarycheck
 set _mode=
