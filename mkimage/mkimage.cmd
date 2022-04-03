@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 set APP_TITLE=DreamSDK Setup Image Builder
 title %APP_TITLE%
 cls
@@ -33,6 +33,7 @@ rem Utilities
 set MKISOFS="%DREAMSDK_HOME%\msys\1.0\bin\mkisofs.exe"
 set CDI4DC="%DREAMSDK_HOME%\msys\1.0\bin\cdi4dc.exe"
 set GETVER="%PYTHON%" "%BASE_DIR%\data\getver.py" "%SETUP_SOURCE_DIR%\setup.exe"
+set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 
 :check_input_dir
 rem Input Directory
@@ -70,14 +71,16 @@ rem Extract company from the Setup file...
 %GETVER% CompanyName > %TEMP_RESULT_FILE%
 set /p PUBLISHER=< %TEMP_RESULT_FILE%
 
-if exist %TEMP_RESULT_FILE% del %TEMP_RESULT_FILE%
-
 :setting_up_parameters
 rem Settings for final Setup image...
 set SYSID=Win32
 set PREPARER=%PACKAGE_NAME% Setup Generator
 set APPID=%PACKAGE_NAME% %PACKAGE_RELEASE_VERSION%
+
+rem Generate valid Volume ID
 set VOLUMEID=%PACKAGE_NAME%_%PACKAGE_RELEASE_VERSION%
+%RUNNER% "./data/genvolid.sh %VOLUMEID%" > %TEMP_RESULT_FILE%
+set /p VOLUMEID=< %TEMP_RESULT_FILE%
 
 rem Output files
 set SETUP_OUTPUT_ISO_FILE=DreamSDK-%PACKAGE_RELEASE_VERSION%-Setup.iso
@@ -104,6 +107,7 @@ goto end
 
 :end
 popd
+if exist %TEMP_RESULT_FILE% del %TEMP_RESULT_FILE%
 pause
 goto :EOF
 
