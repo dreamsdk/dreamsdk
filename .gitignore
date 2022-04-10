@@ -78,3 +78,5 @@ lib/
 .working/
 *.ini
 *.tmp
+.cd_root/
+.dcload/

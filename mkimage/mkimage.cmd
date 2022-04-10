@@ -15,7 +15,7 @@ call :log
 
 :init
 rem Read Configuration
-set CONFIG_FILE=%BASE_DIR%\mkimage.ini
+set CONFIG_FILE=%BASE_DIR%\mkimage.template.ini
 if not exist "%CONFIG_FILE%" goto err_config
 for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   set %%i 2> nul
@@ -33,6 +33,7 @@ rem Utilities
 set MKISOFS="%DREAMSDK_HOME%\msys\1.0\bin\mkisofs.exe"
 set CDI4DC="%DREAMSDK_HOME%\msys\1.0\bin\cdi4dc.exe"
 set GETVER="%PYTHON%" "%BASE_DIR%\data\getver.py" "%SETUP_SOURCE_DIR%\setup.exe"
+set UPPER="%PYTHON%" "%BASE_DIR%\data\upper.py"
 set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 
 :check_input_dir
@@ -43,6 +44,12 @@ if not exist %SETUP_INPUT_DIR% goto err_input_dir
 rem Output Directory
 set SETUP_OUTPUT_DIR=%BASE_DIR%\bin
 if not exist %SETUP_OUTPUT_DIR% mkdir %SETUP_OUTPUT_DIR%
+
+set DCLOAD_INPUT_DIR=%BASE_DIR%\.dcload
+if not exist %DCLOAD_INPUT_DIR% mkdir %DCLOAD_INPUT_DIR%
+
+set IMAGE_OUTPUT_DIR=%BASE_DIR%\.cd_root
+if not exist %IMAGE_OUTPUT_DIR% mkdir %IMAGE_OUTPUT_DIR%
 
 :check_tools
 if not exist %MKISOFS% goto err_binary_mkisofs
@@ -55,8 +62,13 @@ call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
 if "$%PYTHON_VERSION_MAJOR%"=="$3" goto start
 goto err_binary_python
 
+rem Do the magic!
+
 :start
 pushd .
+
+:prepare_disc_root
+call :copy %SETUP_SOURCE_DIR% %IMAGE_OUTPUT_DIR%
 
 :extract_versioninfo
 rem Extract product information from the Setup file...
@@ -83,21 +95,31 @@ set VOLUMEID=%PACKAGE_NAME%_%PACKAGE_RELEASE_VERSION%
 set /p VOLUMEID=< %TEMP_RESULT_FILE%
 
 rem Output files
-set SETUP_OUTPUT_ISO_FILE=DreamSDK-%PACKAGE_RELEASE_VERSION%-Setup.iso
+set SETUP_OUTPUT_BASE_FILE=%PACKAGE_NAME%-%PACKAGE_RELEASE_VERSION%-Setup
+set SETUP_OUTPUT_ISO_FILE=%SETUP_OUTPUT_BASE_FILE%.iso
 
 :make_autorun_inf
-set AUTORUN_INF=%SETUP_SOURCE_DIR%\autorun.inf
+set AUTORUN_INF=%IMAGE_OUTPUT_DIR%\autorun.inf
 echo [autorun] > %AUTORUN_INF%
 echo icon=setup.exe >> %AUTORUN_INF%
 echo open=setup.exe >> %AUTORUN_INF%
 echo label=%APPID% >> %AUTORUN_INF%
 
+:adding_extra_files
+set DREAMSDK_INPUT_DIR=%SYSTEM_OBJECTS_INPUT_DIR%\mingw\msys\1.0\opt\dreamsdk
+copy /B %DREAMSDK_INPUT_DIR%\getstart.rtf %IMAGE_OUTPUT_DIR%\readme.rtf >> %LOG_FILE% 2>&1
+copy /B %DREAMSDK_INPUT_DIR%\LICENSE %IMAGE_OUTPUT_DIR%\license.txt >> %LOG_FILE% 2>&1
+copy /B %DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm %IMAGE_OUTPUT_DIR%\dreamsdk.chm >> %LOG_FILE% 2>&1
+
 :generate_iso
 rem Generate Setup program
 call :log Generating Final ISO Image...
-%MKISOFS% -V "%VOLUMEID%" -sysid "%SYSID%" -publisher "%PUBLISHER%" -preparer "%PREPARER%" -appid "%APPID%" -duplicates-once -joliet -rational-rock -full-iso9660-filenames -o "%SETUP_OUTPUT_DIR%\%SETUP_OUTPUT_ISO_FILE%" "%SETUP_SOURCE_DIR%" >> %LOG_FILE% 2>&1
-if "%errorlevel%+"=="0+" goto finish
+%MKISOFS% -V "%VOLUMEID%" -sysid "%SYSID%" -publisher "%PUBLISHER%" -preparer "%PREPARER%" -appid "%APPID%" -duplicates-once -joliet -rational-rock -full-iso9660-filenames -o "%SETUP_OUTPUT_DIR%\%SETUP_OUTPUT_ISO_FILE%" "%IMAGE_OUTPUT_DIR%" >> %LOG_FILE% 2>&1
+if "%errorlevel%+"=="0+" goto generate_cdi_dcload_ip
 goto err_generation
+
+:generate_cdi_dcload_ip
+call :generate_cdi "Internet Protocol" dcload-ip %DREAMCAST_TOOL_INTERNET_PROTOCOL_URL%
 
 :finish
 call :log
@@ -218,4 +240,114 @@ set _exec=%_exec%.exe
 for %%x in (%_exec%) do if not [%%~$PATH:x]==[] set _cmdfound=1
 :check_command_exit
 endlocal & set "%~2=%_cmdfound%"
+goto :EOF
+
+:git
+rem Usage: call :git <target_path> <repo_dir> <repo_url>
+setlocal EnableDelayedExpansion
+set _git_target_path=%1
+set _git_repo_dir=%2
+set _git_repo_url=%3
+if not exist "%_git_target_path%\%_git_repo_dir%" goto git_clone
+goto git_pull
+:git_clone
+%GIT% -C "%_git_target_path%" clone %_git_repo_url% %_git_repo_dir% --verbose >> %LOG_FILE% 2>&1
+goto git_exit
+:git_pull
+%GIT% -C "%_git_target_path%\%_git_repo_dir%" pull --verbose >> %LOG_FILE% 2>&1
+:git_exit
+endlocal
+goto :EOF
+
+:getver
+set tmpgetver=(UNKNOWN)
+set tmpverfile=%1.tmp
+%GIT% -C "%2" describe --always > %tmpverfile%
+if not exist %tmpverfile% goto getverend
+setlocal EnableDelayedExpansion
+set /p tmpgetver=<%tmpverfile%
+set tmpgetver=%tmpgetver%
+del %tmpverfile%
+:getverend
+endlocal & set %1=%tmpgetver%
+goto :EOF
+
+:win2unix
+setlocal EnableDelayedExpansion
+call :win2unixsub %%%1%%
+set tmpwin2unix=%tmpwin2unix:\=/%
+set tmpwin2unix=/%tmpwin2unix::=%
+endlocal & set %1=%tmpwin2unix%
+goto :EOF
+:win2unixsub
+set tmpwin2unix=%*
+goto :EOF
+
+:generate_cdi
+setlocal EnableDelayedExpansion
+set _name=%~1
+set _codename=%2
+set _giturl=%3
+set _outdir=%DCLOAD_INPUT_DIR%\%_codename%
+call :log Processing: Dreamcast-Tool %_name%
+
+:generate_cdi_dcload_get_source
+call :git %DCLOAD_INPUT_DIR% %_codename% %_giturl%
+call :get_makefile_version _dcload_version %_outdir%\Makefile.cfg
+call :getver _version %_outdir%
+set _version=%_dcload_version%-%_version%
+call :log  Version: %_version%
+cd %_outdir%
+
+:generate_cdi_make_package
+%SEVENZIP% a -xr^^!.git\ -xr^^!*~ -mx9 "%IMAGE_OUTPUT_DIR%\dc-tool.zip" %_outdir%\* >> %LOG_FILE% 2>&1
+
+:generate_cdi_dcload_patch_makefile
+%RUNNER% "sed -e ""s/#STANDALONE_BINARY/STANDALONE_BINARY/g"" Makefile.cfg" > Makefile.tmp
+ren Makefile.cfg Makefile.bak
+move Makefile.tmp Makefile.cfg >> %LOG_FILE% 2>&1
+
+:generate_cdi_dcload_build
+%RUNNER% "make" >> %LOG_FILE% 2>&1
+
+:generate_cdi_prepare_disc
+copy /B %_outdir%\target-src\1st_read\1st_read.bin %IMAGE_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+copy /B %_outdir%\make-cd\IP.BIN %IMAGE_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+copy /B %_outdir%\host-src\tool\dc-tool*.exe %IMAGE_OUTPUT_DIR%\dc-tool.exe >> %LOG_FILE% 2>&1
+set _dctool_binary_unix_file=%IMAGE_OUTPUT_DIR%\dc-tool.exe
+call :win2unix _dctool_binary_unix_file
+%RUNNER% "strip ""%_dctool_binary_unix_file%"""
+set _radicalfn=%SETUP_OUTPUT_BASE_FILE%-%_codename%-%_version%
+echo %_radicalfn% > %IMAGE_OUTPUT_DIR%\disc_id.diz
+%UPPER% %IMAGE_OUTPUT_DIR%
+
+:generate_cdi_make_disc
+set TARGET_FILE=%SETUP_OUTPUT_DIR%\%_radicalfn%.cdi
+call :win2unix TARGET_FILE
+set SOURCE_DIR=%IMAGE_OUTPUT_DIR%
+call :win2unix SOURCE_DIR
+set BOOTSTRAP_FILE=%IMAGE_OUTPUT_DIR%\IP.BIN
+call :win2unix BOOTSTRAP_FILE
+%RUNNER% "makedisc %TARGET_FILE% %SOURCE_DIR% %BOOTSTRAP_FILE% %VOLUMEID% --data --joliet-rock" >> %LOG_FILE% 2>&1
+endlocal
+goto :EOF
+
+:copy
+set EXCLUDE_FILE=%BASE_DIR%\exclude.txt
+echo .git\ > %EXCLUDE_FILE%
+echo .svn\ >> %EXCLUDE_FILE%
+xcopy %1\* %2 /exclude:%EXCLUDE_FILE% /s /i /y >> %LOG_FILE% 2>&1
+if exist %EXCLUDE_FILE% del %EXCLUDE_FILE%
+goto :EOF
+
+:get_makefile_version
+setlocal EnableDelayedExpansion
+set _makefile=%2
+set _version=
+call :win2unix _makefile
+%RUNNER% "./data/getmkvar.sh %_makefile% VERSION" > %TEMP_RESULT_FILE%
+set /p _version=< %TEMP_RESULT_FILE%
+endlocal & (
+	set "%~1=%_version%"
+)
 goto :EOF
