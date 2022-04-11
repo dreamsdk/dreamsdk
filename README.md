@@ -1,7 +1,7 @@
 # Setup Helpers for DreamSDK
 
-This repository contains all scripts and programs used for producing a
-valid **DreamSDK** installation package.
+This repository contains all scripts and programs used for producing a valid
+**DreamSDK** installation package.
 
 All these scripts/programs are used for helping the generation of the
 **DreamSDK Setup** full package.
