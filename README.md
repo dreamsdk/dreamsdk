@@ -1,10 +1,7 @@
 # Setup Helpers for DreamSDK
 
-This repository contains all scripts and programs used for producing a valid
-**DreamSDK** installation package.
-
-All these scripts/programs are used for helping the generation of the
-**DreamSDK Setup** full package.
+This repository contains all scripts and additional programs used for producing
+valid **DreamSDK** installation packages.
 
 ## Embedded
 
@@ -17,14 +14,8 @@ the platform architecture for the target binary passed in parameter.
 All these 2 binaries are embedded in the **DreamSDK Setup** package but they
 aren't used in **DreamSDK** itself.
 
-## Offline
+## Scripts
 
-This script is preparing everything for embedding **KallistiOS**, **KOS Ports**,
-**Dreamcast Tool** and **Ruby** libraries directly the **DreamSDK Setup**
-package.
-
-## Prepare
-
-This script is generating the `.sources` directory that will be embedded in the
-**DreamSDK Setup** package.
+All the scripts used for generate the **DreamSDK** installation packages.
+...
 
