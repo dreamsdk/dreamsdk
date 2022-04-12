@@ -15,7 +15,7 @@ call :log
 
 :init
 rem Read Configuration
-set CONFIG_FILE=%BASE_DIR%\mkimage.template.ini
+set CONFIG_FILE=%BASE_DIR%\mkimage.ini
 if not exist "%CONFIG_FILE%" goto err_config
 for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   set %%i 2> nul
@@ -34,6 +34,7 @@ set MKISOFS="%DREAMSDK_HOME%\msys\1.0\bin\mkisofs.exe"
 set CDI4DC="%DREAMSDK_HOME%\msys\1.0\bin\cdi4dc.exe"
 set GETVER="%PYTHON%" "%BASE_DIR%\data\getver.py" "%SETUP_SOURCE_DIR%\setup.exe"
 set UPPER="%PYTHON%" "%BASE_DIR%\data\upper.py"
+set GENSORT="%PYTHON%" "%BASE_DIR%\data\gensort.py"
 set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 
 :check_input_dir
@@ -303,9 +304,11 @@ cd %_outdir%
 %SEVENZIP% a -xr^^!.git\ -xr^^!*~ -mx9 "%IMAGE_OUTPUT_DIR%\dc-tool.zip" %_outdir%\* >> %LOG_FILE% 2>&1
 
 :generate_cdi_dcload_patch_makefile
-%RUNNER% "sed -e ""s/#STANDALONE_BINARY/STANDALONE_BINARY/g"" Makefile.cfg" > Makefile.tmp
-ren Makefile.cfg Makefile.bak
-move Makefile.tmp Makefile.cfg >> %LOG_FILE% 2>&1
+if not exist Makefile.bak (
+  %RUNNER% "sed -e ""s/#STANDALONE_BINARY/STANDALONE_BINARY/g"" Makefile.cfg" > Makefile.tmp
+  ren Makefile.cfg Makefile.bak
+  move Makefile.tmp Makefile.cfg >> %LOG_FILE% 2>&1
+)
 
 :generate_cdi_dcload_build
 %RUNNER% "make" >> %LOG_FILE% 2>&1
@@ -322,13 +325,16 @@ echo %_radicalfn% > %IMAGE_OUTPUT_DIR%\disc_id.diz
 %UPPER% %IMAGE_OUTPUT_DIR%
 
 :generate_cdi_make_disc
+set SORT_FILE=%BASE_DIR%\sortfile.str
+%GENSORT% %IMAGE_OUTPUT_DIR% > %SORT_FILE%
+call :win2unix SORT_FILE
 set TARGET_FILE=%SETUP_OUTPUT_DIR%\%_radicalfn%.cdi
 call :win2unix TARGET_FILE
 set SOURCE_DIR=%IMAGE_OUTPUT_DIR%
 call :win2unix SOURCE_DIR
 set BOOTSTRAP_FILE=%IMAGE_OUTPUT_DIR%\IP.BIN
 call :win2unix BOOTSTRAP_FILE
-%RUNNER% "makedisc %TARGET_FILE% %SOURCE_DIR% %BOOTSTRAP_FILE% %VOLUMEID% --data --joliet-rock" >> %LOG_FILE% 2>&1
+%RUNNER% "makedisc %TARGET_FILE% %SOURCE_DIR% %BOOTSTRAP_FILE% %VOLUMEID% --data --joliet-rock %SORT_FILE%" >> %LOG_FILE% 2>&1
 endlocal
 goto :EOF
 
