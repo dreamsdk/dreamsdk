@@ -106,11 +106,7 @@ set SETUP_OUTPUT_ISO_PATH=%SETUP_OUTPUT_DIR%\%SETUP_OUTPUT_ISO_FILE%
 if exist %SETUP_OUTPUT_ISO_PATH% goto err_generated_iso
 
 :make_autorun_inf
-set AUTORUN_INF=%IMAGE_OUTPUT_DIR%\autorun.inf
-echo [autorun] > %AUTORUN_INF%
-echo icon=setup.exe >> %AUTORUN_INF%
-echo open=setup.exe >> %AUTORUN_INF%
-echo label=%APPID% >> %AUTORUN_INF%
+call :generate_autorun_inf "%APPID%"
 
 :adding_extra_files
 set DREAMSDK_INPUT_DIR=%SYSTEM_OBJECTS_INPUT_DIR%\mingw\msys\1.0\opt\dreamsdk
@@ -304,7 +300,6 @@ set _name=%~1
 set _codename=%2
 set _giturl=%3
 set _outdir=%DCLOAD_INPUT_DIR%\%_codename%
-
 set _makefile_conf=Makefile.cfg
 
 call :log Generating: CDI Image: Dreamcast-Tool %_name%
@@ -315,6 +310,8 @@ call :get_makefile_version _dcload_version %_outdir%\%_makefile_conf%
 call :getver _version %_outdir%
 set _version=%_dcload_version%-%_version%
 set _radicalfn=%SETUP_OUTPUT_BASE_FILE%-%_codename%-%_version%
+set _friendly_volume_label=%APPID% (%_codename% %_version%)
+set _volume_label=%VOLUMEID%_%_codename%_%_version%
 
 :generate_cdi_check_output
 set _target_file=%_radicalfn%.cdi
@@ -340,6 +337,7 @@ if not exist %_makefile_backup% (
 %RUNNER% "make" >> %LOG_FILE% 2>&1
 
 :generate_cdi_prepare_disc
+call :generate_autorun_inf "%_friendly_volume_label%"
 set _dctool_binary_client_file=%IMAGE_OUTPUT_DIR%\dc-tool.exe
 set _dctool_binary_client_unix_file=%_dctool_binary_client_file%
 copy /B %_outdir%\target-src\1st_read\1st_read.bin %IMAGE_OUTPUT_DIR% >> %LOG_FILE% 2>&1
@@ -360,7 +358,8 @@ call :win2unix SOURCE_DIR
 set BOOTSTRAP_FILE=%IMAGE_OUTPUT_DIR%\IP.BIN
 call :win2unix BOOTSTRAP_FILE
 call :win2unix SORT_FILE
-%RUNNER% "makedisc %_target_file_path% %SOURCE_DIR% %BOOTSTRAP_FILE% %VOLUMEID% --data --joliet-rock %SORT_FILE%" >> %LOG_FILE% 2>&1
+echo %_volume_label%
+%RUNNER% "makedisc %_target_file_path% %SOURCE_DIR% %BOOTSTRAP_FILE% %_volume_label% --data --joliet-rock %SORT_FILE%" >> %LOG_FILE% 2>&1
 endlocal
 goto :EOF
 
@@ -382,4 +381,16 @@ set /p _version=< %TEMP_RESULT_FILE%
 endlocal & (
 	set "%~1=%_version%"
 )
+goto :EOF
+
+:generate_autorun_inf
+setlocal EnableDelayedExpansion
+set _label=%~1
+set _autorun_inf=%IMAGE_OUTPUT_DIR%\autorun.inf
+echo [autorun] > %_autorun_inf%
+echo icon=setup.exe >> %_autorun_inf%
+echo open=setup.exe >> %_autorun_inf%
+echo label=%_label% >> %_autorun_inf%
+echo %_label%
+endlocal
 goto :EOF
