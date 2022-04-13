@@ -14,6 +14,9 @@ call :log %APP_TITLE%
 call :log
 
 :init
+rem Some temp directory and files
+set TEMP_RESULT_FILE=%TEMP%\~mkimage.tmp
+
 rem Read Configuration
 set CONFIG_FILE=%BASE_DIR%\mkimage.ini
 if not exist "%CONFIG_FILE%" goto err_config
@@ -25,9 +28,8 @@ for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   )
 )
 
-rem Some temp directory and files
+rem xxxx
 set SETUP_SOURCE_DIR=%SETUP_INPUT_DIR%\bin
-set TEMP_RESULT_FILE=%TEMP%\~mkimage.tmp
 
 rem Utilities
 set MKISOFS="%DREAMSDK_HOME%\msys\1.0\bin\mkisofs.exe"
@@ -37,11 +39,11 @@ set UPPER="%PYTHON%" "%BASE_DIR%\data\upper.py"
 set GENSORT="%PYTHON%" "%BASE_DIR%\data\gensort.py"
 set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 
-:check_input_dir
+:check_input
 rem Input Directory
 if not exist %SETUP_INPUT_DIR% goto err_input_dir
 
-:check_output_dir
+:check_output
 rem Output Directory
 set SETUP_OUTPUT_DIR=%BASE_DIR%\bin
 if not exist %SETUP_OUTPUT_DIR% mkdir %SETUP_OUTPUT_DIR%
@@ -98,6 +100,10 @@ set /p VOLUMEID=< %TEMP_RESULT_FILE%
 rem Output files
 set SETUP_OUTPUT_BASE_FILE=%PACKAGE_NAME%-%PACKAGE_RELEASE_VERSION%-Setup
 set SETUP_OUTPUT_ISO_FILE=%SETUP_OUTPUT_BASE_FILE%.iso
+set SETUP_OUTPUT_ISO_PATH=%SETUP_OUTPUT_DIR%\%SETUP_OUTPUT_ISO_FILE%
+
+:check_iso
+if exist %SETUP_OUTPUT_ISO_PATH% goto err_generated_iso
 
 :make_autorun_inf
 set AUTORUN_INF=%IMAGE_OUTPUT_DIR%\autorun.inf
@@ -114,13 +120,16 @@ copy /B %DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm %IMAGE_OUTPUT_DIR%\dreamsdk.c
 
 :generate_iso
 rem Generate Setup program
-call :log Generating Final ISO Image...
-%MKISOFS% -V "%VOLUMEID%" -sysid "%SYSID%" -publisher "%PUBLISHER%" -preparer "%PREPARER%" -appid "%APPID%" -duplicates-once -joliet -rational-rock -full-iso9660-filenames -o "%SETUP_OUTPUT_DIR%\%SETUP_OUTPUT_ISO_FILE%" "%IMAGE_OUTPUT_DIR%" >> %LOG_FILE% 2>&1
+call :log Generating: ISO Image
+%MKISOFS% -V "%VOLUMEID%" -sysid "%SYSID%" -publisher "%PUBLISHER%" -preparer "%PREPARER%" -appid "%APPID%" -duplicates-once -joliet -rational-rock -full-iso9660-filenames -o "%SETUP_OUTPUT_ISO_PATH%" "%IMAGE_OUTPUT_DIR%" >> %LOG_FILE% 2>&1
 if "%errorlevel%+"=="0+" goto generate_cdi_dcload_ip
 goto err_generation
 
 :generate_cdi_dcload_ip
 call :generate_cdi "Internet Protocol" dcload-ip %DREAMCAST_TOOL_INTERNET_PROTOCOL_URL%
+
+:generate_cdi_dcload_serial
+call :generate_cdi "Serial" dcload-serial %DREAMCAST_TOOL_SERIAL_URL%
 
 :finish
 call :log
@@ -165,6 +174,11 @@ goto end
 
 :err_generation
 call :err Unable to generate the ISO file.
+call :log File: "%SETUP_OUTPUT_ISO_FILE%"
+goto end
+
+:err_generated_iso
+call :err ISO file was already generated.
 call :log File: "%SETUP_OUTPUT_ISO_FILE%"
 goto end
 
@@ -290,51 +304,63 @@ set _name=%~1
 set _codename=%2
 set _giturl=%3
 set _outdir=%DCLOAD_INPUT_DIR%\%_codename%
-call :log Processing: Dreamcast-Tool %_name%
+
+set _makefile_conf=Makefile.cfg
+
+call :log Generating: CDI Image: Dreamcast-Tool %_name%
 
 :generate_cdi_dcload_get_source
 call :git %DCLOAD_INPUT_DIR% %_codename% %_giturl%
-call :get_makefile_version _dcload_version %_outdir%\Makefile.cfg
+call :get_makefile_version _dcload_version %_outdir%\%_makefile_conf%
 call :getver _version %_outdir%
 set _version=%_dcload_version%-%_version%
-call :log  Version: %_version%
-cd %_outdir%
+set _radicalfn=%SETUP_OUTPUT_BASE_FILE%-%_codename%-%_version%
+
+:generate_cdi_check_output
+set _target_file=%_radicalfn%.cdi
+set _target_file_path=%SETUP_OUTPUT_DIR%\%_target_file%
+if exist %_target_file_path% (
+  call :err CDI file was already generated.
+  call :log File: "%_target_file%"
+  goto end
+)
 
 :generate_cdi_make_package
 %SEVENZIP% a -xr^^!.git\ -xr^^!*~ -mx9 "%IMAGE_OUTPUT_DIR%\dc-tool.zip" %_outdir%\* >> %LOG_FILE% 2>&1
 
-:generate_cdi_dcload_patch_makefile
-if not exist Makefile.bak (
-  %RUNNER% "sed -e ""s/#STANDALONE_BINARY/STANDALONE_BINARY/g"" Makefile.cfg" > Makefile.tmp
-  ren Makefile.cfg Makefile.bak
-  move Makefile.tmp Makefile.cfg >> %LOG_FILE% 2>&1
+:generate_cdi_dcload_make
+set _makefile_backup=Makefile.bak
+set _makefile_temp=Makefile.tmp
+cd %_outdir%
+if not exist %_makefile_backup% (
+  %RUNNER% "sed -e ""s/#STANDALONE_BINARY/STANDALONE_BINARY/g"" %_makefile_conf%" > %_makefile_temp%
+  ren %_makefile_conf% %_makefile_backup%
+  move %_makefile_temp% %_makefile_conf% >> %LOG_FILE% 2>&1
 )
-
-:generate_cdi_dcload_build
 %RUNNER% "make" >> %LOG_FILE% 2>&1
 
 :generate_cdi_prepare_disc
+set _dctool_binary_client_file=%IMAGE_OUTPUT_DIR%\dc-tool.exe
+set _dctool_binary_client_unix_file=%_dctool_binary_client_file%
 copy /B %_outdir%\target-src\1st_read\1st_read.bin %IMAGE_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 copy /B %_outdir%\make-cd\IP.BIN %IMAGE_OUTPUT_DIR% >> %LOG_FILE% 2>&1
-copy /B %_outdir%\host-src\tool\dc-tool*.exe %IMAGE_OUTPUT_DIR%\dc-tool.exe >> %LOG_FILE% 2>&1
-set _dctool_binary_unix_file=%IMAGE_OUTPUT_DIR%\dc-tool.exe
-call :win2unix _dctool_binary_unix_file
-%RUNNER% "strip ""%_dctool_binary_unix_file%"""
-set _radicalfn=%SETUP_OUTPUT_BASE_FILE%-%_codename%-%_version%
+copy /B %_outdir%\host-src\tool\dc-tool*.exe %_dctool_binary_client_file% >> %LOG_FILE% 2>&1
+call :win2unix _dctool_binary_client_unix_file
+%RUNNER% "strip ""%_dctool_binary_client_unix_file%"""
+%UPX32% -9 "%_dctool_binary_client_file%" >> %LOG_FILE% 2>&1
 echo %_radicalfn% > %IMAGE_OUTPUT_DIR%\disc_id.diz
 %UPPER% %IMAGE_OUTPUT_DIR%
 
 :generate_cdi_make_disc
 set SORT_FILE=%BASE_DIR%\sortfile.str
 %GENSORT% %IMAGE_OUTPUT_DIR% > %SORT_FILE%
-call :win2unix SORT_FILE
-set TARGET_FILE=%SETUP_OUTPUT_DIR%\%_radicalfn%.cdi
-call :win2unix TARGET_FILE
+call :win2unix _target_file_path
 set SOURCE_DIR=%IMAGE_OUTPUT_DIR%
 call :win2unix SOURCE_DIR
 set BOOTSTRAP_FILE=%IMAGE_OUTPUT_DIR%\IP.BIN
 call :win2unix BOOTSTRAP_FILE
-%RUNNER% "makedisc %TARGET_FILE% %SOURCE_DIR% %BOOTSTRAP_FILE% %VOLUMEID% --data --joliet-rock %SORT_FILE%" >> %LOG_FILE% 2>&1
+call :win2unix SORT_FILE
+%RUNNER% "makedisc %_target_file_path% %SOURCE_DIR% %BOOTSTRAP_FILE% %VOLUMEID% --data --joliet-rock %SORT_FILE%" >> %LOG_FILE% 2>&1
 endlocal
 goto :EOF
 
