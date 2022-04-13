@@ -358,7 +358,6 @@ call :win2unix SOURCE_DIR
 set BOOTSTRAP_FILE=%IMAGE_OUTPUT_DIR%\IP.BIN
 call :win2unix BOOTSTRAP_FILE
 call :win2unix SORT_FILE
-echo %_volume_label%
 %RUNNER% "makedisc %_target_file_path% %SOURCE_DIR% %BOOTSTRAP_FILE% %_volume_label% --data --joliet-rock %SORT_FILE%" >> %LOG_FILE% 2>&1
 endlocal
 goto :EOF
@@ -391,6 +390,5 @@ echo [autorun] > %_autorun_inf%
 echo icon=setup.exe >> %_autorun_inf%
 echo open=setup.exe >> %_autorun_inf%
 echo label=%_label% >> %_autorun_inf%
-echo %_label%
 endlocal
 goto :EOF
