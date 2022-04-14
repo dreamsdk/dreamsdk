@@ -28,7 +28,7 @@ for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   )
 )
 
-rem xxxx
+rem Initilization
 set SETUP_SOURCE_DIR=%SETUP_INPUT_DIR%\bin
 
 rem Utilities
@@ -91,6 +91,7 @@ rem Settings for final Setup image...
 set SYSID=Win32
 set PREPARER=%PACKAGE_NAME% Setup Generator
 set APPID=%PACKAGE_NAME% %PACKAGE_RELEASE_VERSION%
+call :log Building: %APPID%
 
 rem Generate valid Volume ID
 set VOLUMEID=%PACKAGE_NAME%_%PACKAGE_RELEASE_VERSION%
@@ -113,6 +114,7 @@ set DREAMSDK_INPUT_DIR=%SYSTEM_OBJECTS_INPUT_DIR%\mingw\msys\1.0\opt\dreamsdk
 copy /B %DREAMSDK_INPUT_DIR%\getstart.rtf %IMAGE_OUTPUT_DIR%\readme.rtf >> %LOG_FILE% 2>&1
 copy /B %DREAMSDK_INPUT_DIR%\LICENSE %IMAGE_OUTPUT_DIR%\license.txt >> %LOG_FILE% 2>&1
 copy /B %DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm %IMAGE_OUTPUT_DIR%\dreamsdk.chm >> %LOG_FILE% 2>&1
+echo %SETUP_OUTPUT_BASE_FILE% > %IMAGE_OUTPUT_DIR%\disc_id.diz
 
 :generate_iso
 rem Generate Setup program
@@ -310,8 +312,8 @@ call :get_makefile_version _dcload_version %_outdir%\%_makefile_conf%
 call :getver _version %_outdir%
 set _version=%_dcload_version%-%_version%
 set _radicalfn=%SETUP_OUTPUT_BASE_FILE%-%_codename%-%_version%
-set _friendly_volume_label=%APPID% (%_codename% %_version%)
-set _volume_label=%VOLUMEID%_%_codename%_%_version%
+set _friendly_volume_label=%APPID% (%_codename%)
+set _volume_label=%VOLUMEID%
 
 :generate_cdi_check_output
 set _target_file=%_radicalfn%.cdi
@@ -323,7 +325,7 @@ if exist %_target_file_path% (
 )
 
 :generate_cdi_make_package
-%SEVENZIP% a -xr^^!.git\ -xr^^!*~ -mx9 "%IMAGE_OUTPUT_DIR%\dc-tool.zip" %_outdir%\* >> %LOG_FILE% 2>&1
+%SEVENZIP% a -xr^^!.git\ -xr^^!*~ -mx9 "%IMAGE_OUTPUT_DIR%\dcload.zip" %_outdir%\* >> %LOG_FILE% 2>&1
 
 :generate_cdi_dcload_make
 set _makefile_backup=Makefile.bak
