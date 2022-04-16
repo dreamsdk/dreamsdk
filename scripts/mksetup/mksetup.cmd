@@ -38,7 +38,9 @@ pushd .
 :exec_iscc
 rem Generate Setup program
 call :log Generating DreamSDK Setup...
-%ISCC% "%SETUP_INPUT_DIR%\src\dreamsdk.iss" >> %LOG_FILE% 2>&1
+set SETUP_SCRIPT_FILE="%SETUP_INPUT_DIR%\src\dreamsdk.iss"
+set DUALSIGN_SCRIPT_FILE="%BASE_DIR%\..\..\embedded\dualsign\dualsign.cmd"
+%ISCC% %SETUP_SCRIPT_FILE% "/SSignTool=%DUALSIGN_SCRIPT_FILE% $p" >> %LOG_FILE% 2>&1
 
 :finish
 call :log
