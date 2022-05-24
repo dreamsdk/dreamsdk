@@ -145,7 +145,8 @@ procedure TCodeBlocksHelperApplication.DoRun;
     end;
 
   const
-    DIRECTORIES: array[0..2] of TInnoSetupTranslation = (
+    DIRECTORIES: array[0..3] of TInnoSetupTranslation = (
+      (EnvironmentVariable: '%ProgramW6432%'; InnoSetupVariable: '{pf64}'; Is64BitOnly: True),
       (EnvironmentVariable: '%ProgramFiles(x86)%'; InnoSetupVariable: '{pf32}'; Is64BitOnly: True),
       (EnvironmentVariable: '%ProgramFiles%'; InnoSetupVariable: '{pf64}'; Is64BitOnly: True),
       (EnvironmentVariable: '%ProgramFiles%'; InnoSetupVariable: '{pf32}'; Is64BitOnly: False)

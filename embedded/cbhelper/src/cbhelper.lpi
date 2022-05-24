@@ -25,7 +25,7 @@
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="1"/>
-      <BuildNr Value="127"/>
+      <BuildNr Value="129"/>
       <StringTable Comments="https://dreamsdk.org/" CompanyName="The DreamSDK Team" FileDescription="Code::Blocks Patcher Helper for DreamSDK Setup" InternalName="cbhelper" LegalCopyright="© Copyleft 2018-2022" LegalTrademarks="Code::Blocks is distributed under the GNU GPL3. Sega and Dreamcast are registered trademark of Sega Games Co., Ltd." OriginalFilename="cbhelper.exe" ProductName="DreamSDK" ProductVersion="3.0.4.2206"/>
     </VersionInfo>
     <BuildModes Count="2">
@@ -52,6 +52,7 @@
           <Linking>
             <Debugging>
               <GenerateDebugInfo Value="False"/>
+              <DebugInfoType Value="dsDwarf2Set"/>
             </Debugging>
             <LinkSmart Value="True"/>
           </Linking>
@@ -66,13 +67,13 @@
     </PublishOptions>
     <RunParams>
       <local>
-        <CommandLineParams Value="--initialize"/>
+        <CommandLineParams Value="--detect"/>
       </local>
       <FormatVersion Value="2"/>
       <Modes Count="1">
         <Mode0 Name="default">
           <local>
-            <CommandLineParams Value="--initialize"/>
+            <CommandLineParams Value="--detect"/>
           </local>
         </Mode0>
       </Modes>
