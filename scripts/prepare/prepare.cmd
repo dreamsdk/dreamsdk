@@ -34,6 +34,7 @@ for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
 rem Utilities
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
+set DUALSIGN="%BASE_DIR%\..\..\embedded\dualsign\dualsign.cmd"
 
 rem Input directories
 call :checkdir FUNC_RESULT %CODEBLOCKS_PATCHER_INPUT_DIR%
@@ -457,6 +458,9 @@ goto copybinarycompress
 call :warn %_name% is compiled in DEBUG mode...
 :copybinarycompress
 %UPX32% -9 %_upx_optional_switches% %_target%\%_name%.exe >> %LOG_FILE% 2>&1
+if "%SIGN_BINARIES%+"=="1+" (
+	%DUALSIGN% %_target%\%_name%.exe >> %LOG_FILE% 2>&1
+)
 :copybinaryexit
 endlocal & (
 	set "%~1=%_result%"	
