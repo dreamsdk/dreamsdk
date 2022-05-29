@@ -34,7 +34,7 @@ for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
 rem Utilities
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
-set DUALSIGN="%BASE_DIR%\..\..\embedded\dualsign\dualsign.cmd"
+set DUALSIGN="%SETUP_HELPERS_INPUT_DIR%\dualsign\dualsign.cmd"
 
 rem Input directories
 call :checkdir FUNC_RESULT %CODEBLOCKS_PATCHER_INPUT_DIR%
@@ -94,8 +94,14 @@ if "+%FUNC_RESULT%"=="+0" goto err_binary_python
 set PYTHON_VERSION_MAJOR=
 set PYTHON_VERSION=
 call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
-if "$%PYTHON_VERSION_MAJOR%"=="$3" goto start
+if "$%PYTHON_VERSION_MAJOR%"=="$3" goto check_dualsign
 goto err_binary_python
+
+:check_dualsign
+if "%SIGN_BINARIES%+"=="1+" (
+  if not exist %DUALSIGN% goto err_binary_dualsign
+)
+goto start
 
 :start
 pushd .
@@ -120,10 +126,10 @@ call :log Copying Setup Helpers...
 set SETUP_HELPERS_OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.helpers
 if not exist %SETUP_HELPERS_OUTPUT_DIR% mkdir %SETUP_HELPERS_OUTPUT_DIR%
 
-call :copybinary FUNC_RESULT cbhelper %BASE_DIR%\..\..\embedded %SETUP_HELPERS_OUTPUT_DIR%
+call :copybinary FUNC_RESULT cbhelper %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
-call :copybinary FUNC_RESULT pecheck %BASE_DIR%\..\..\embedded %SETUP_HELPERS_OUTPUT_DIR%
+call :copybinary FUNC_RESULT pecheck %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_helpers
@@ -293,6 +299,11 @@ goto end
 :err_binary_upx
 call :err UPX 32-bit was not found.
 call :log File: "%UPX32%"
+goto end
+
+:err_binary_dualsign
+call :err DualSign utility was not found.
+call :log File: "%DUALSIGN%"
 goto end
 
 :err_offline
