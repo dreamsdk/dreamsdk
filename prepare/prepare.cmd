@@ -172,7 +172,8 @@ if "+%FUNC_RESULT%"=="+0" goto end
 :dreamsdk_help
 call :log Copying Help...
 set HELP_INPUT_FILE=%DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm
-if not exist %HELP_INPUT_FILE% goto err_help_missing
+if not exist %HHC% goto err_hhc_missing
+%HHC% "%DOCUMENTATION_INPUT_DIR%\src\dreamsdk.hhp" >> %LOG_FILE% 2>&1
 copy /B %HELP_INPUT_FILE% %BIN_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 
 :extract
@@ -307,12 +308,12 @@ call :log File: "%DUALSIGN%"
 goto end
 
 :err_offline
-call :err Missing embedded/offline files. Please run the "Offline" script.
+call :err Missing embedded/offline files. Please run the Offline script.
 call :log This script is located in "setup-helpers" as well.
 goto end
 
-:err_help_missing
-call :err Missing Help CHM file. Please build it using "KEL CHM Creator".
+:err_hhc_missing
+call :err Missing Microsoft HTML Help Workshop. Please install it.
 call :log Please read the "documentation" repository for more information.
 goto end
 
