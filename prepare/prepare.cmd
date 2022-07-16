@@ -88,6 +88,10 @@ if "+%FUNC_RESULT%"=="+0" goto err_binary_sevenzip
 call :checkfile FUNC_RESULT %UPX32%
 if "+%FUNC_RESULT%"=="+0" goto err_binary_upx
 
+:check_hhc
+call :checkfile FUNC_RESULT %HHC%
+if "+%FUNC_RESULT%"=="+0" goto err_hhc_missing
+
 :check_python
 call :checkfile FUNC_RESULT %PYTHON%
 if "+%FUNC_RESULT%"=="+0" goto err_binary_python
@@ -101,7 +105,6 @@ goto err_binary_python
 if "%SIGN_BINARIES%+"=="1+" (
   if not exist %DUALSIGN% goto err_binary_dualsign
 )
-goto start
 
 :start
 pushd .
@@ -172,7 +175,6 @@ if "+%FUNC_RESULT%"=="+0" goto end
 :dreamsdk_help
 call :log Copying Help...
 set HELP_INPUT_FILE=%DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm
-if not exist %HHC% goto err_hhc_missing
 %HHC% "%DOCUMENTATION_INPUT_DIR%\src\dreamsdk.hhp" >> %LOG_FILE% 2>&1
 copy /B %HELP_INPUT_FILE% %BIN_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 
