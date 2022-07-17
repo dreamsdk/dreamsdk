@@ -451,7 +451,7 @@ if not exist "%_project%" (
 if "$%errorlevel%"=="$0" goto copybinarybuild
 call :err Failing Building Project: "%_name%".
 set _result=0
-goto copybinaryexit  
+goto copybinaryexit
 :copybinarybuild
 copy /B %_binary% %_target% >> %LOG_FILE% 2>&1
 :copybinarycheck
@@ -471,7 +471,12 @@ call :warn %_name% is compiled in DEBUG mode...
 :copybinarycompress
 %UPX32% -9 %_upx_optional_switches% %_target%\%_name%.exe >> %LOG_FILE% 2>&1
 if "%SIGN_BINARIES%+"=="1+" (
-	%DUALSIGN% %_target%\%_name%.exe >> %LOG_FILE% 2>&1
+	call %DUALSIGN% %_target%\%_name%.exe >> %LOG_FILE% 2>&1
+	rem TODO - Test this part
+    if errorlevel 0 goto copybinaryexit
+    call :err Failing Signing Project: "%_name%".
+    set _result=0
+    goto copybinaryexit
 )
 :copybinaryexit
 endlocal & (
