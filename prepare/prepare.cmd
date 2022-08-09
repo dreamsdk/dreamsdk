@@ -287,7 +287,7 @@ call :log Directory: "%SETUP_OUTPUT_DIR%"
 goto end
 
 :err_dreamsdk_missing
-call :err Please install DreamSDK before using this script.
+call :err Please install a previous version of DreamSDK before using this script.
 goto end
 
 :err_binary_sevenzip
@@ -346,7 +346,7 @@ set _result=1
 set _target=%2
 set _patch=%3
 %PATCH% -N -d %_target% -p1 -r - < %_patch% >> %LOG_FILE% 2>&1
-if "%errorlevel%+"=="0+" goto patchexit
+if "!errorlevel!+"=="0+" goto patchexit
 call :err Failed Patch: "%_patch%".
 set _result=0
 :patchexit
@@ -451,7 +451,7 @@ if not exist "%_project%" (
   goto copybinaryexit
 )
 %LAZBUILD% %_project% --build-mode="Release" --verbose >> %LOG_FILE% 2>&1
-if "$%errorlevel%"=="$0" goto copybinarybuild
+if "$!errorlevel!"=="$0" goto copybinarybuild
 call :err Failing Building Project: "%_name%".
 set _result=0
 goto copybinaryexit
@@ -474,9 +474,8 @@ call :warn %_name% is compiled in DEBUG mode...
 :copybinarycompress
 %UPX32% -9 %_upx_optional_switches% %_target%\%_name%.exe >> %LOG_FILE% 2>&1
 if "%SIGN_BINARIES%+"=="1+" (
-	call %DUALSIGN% %_target%\%_name%.exe >> %LOG_FILE% 2>&1
-	rem TODO - Test this part
-    if errorlevel 0 goto copybinaryexit
+	call %DUALSIGN% %_target%\%_name%.exe >> %LOG_FILE% 2>&1	   
+	if "$!errorlevel!"=="$0" goto copybinaryexit
     call :err Failing Signing Project: "%_name%".
     set _result=0
     goto copybinaryexit
