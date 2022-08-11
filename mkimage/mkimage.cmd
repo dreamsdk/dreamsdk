@@ -45,7 +45,7 @@ if not exist %SETUP_INPUT_DIR% goto err_input_dir
 
 :check_output
 rem Output Directory
-set SETUP_OUTPUT_DIR=%BASE_DIR%\bin
+set SETUP_OUTPUT_DIR=%BASE_DIR%\dist
 if not exist %SETUP_OUTPUT_DIR% mkdir %SETUP_OUTPUT_DIR%
 
 set DCLOAD_INPUT_DIR=%BASE_DIR%\.dcload
