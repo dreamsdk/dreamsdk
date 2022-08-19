@@ -45,7 +45,7 @@ if not exist %SETUP_INPUT_DIR% goto err_input_dir
 
 :check_output
 rem Output Directory
-set SETUP_OUTPUT_DIR=%BASE_DIR%\dist
+set SETUP_OUTPUT_DIR=%BASE_DIR%\..\dist
 if not exist %SETUP_OUTPUT_DIR% mkdir %SETUP_OUTPUT_DIR%
 
 set DCLOAD_INPUT_DIR=%BASE_DIR%\.dcload
@@ -86,6 +86,10 @@ rem Extract company from the Setup file...
 %GETVER% CompanyName > %TEMP_RESULT_FILE%
 set /p PUBLISHER=< %TEMP_RESULT_FILE%
 
+rem Extract file version from the Setup file...
+%GETVER% FileVersion > %TEMP_RESULT_FILE%
+set /p PACKAGE_BUILD_VERSION=< %TEMP_RESULT_FILE%
+
 :setting_up_parameters
 rem Settings for final Setup image...
 set SYSID=Win32
@@ -102,6 +106,7 @@ rem Output files
 set SETUP_OUTPUT_BASE_FILE=%PACKAGE_NAME%-%PACKAGE_RELEASE_VERSION%-Setup
 set SETUP_OUTPUT_ISO_FILE=%SETUP_OUTPUT_BASE_FILE%.iso
 set SETUP_OUTPUT_ISO_PATH=%SETUP_OUTPUT_DIR%\%SETUP_OUTPUT_ISO_FILE%
+set DISC_ID_DIZ=%IMAGE_OUTPUT_DIR%\disc_id.diz
 
 :check_iso
 if exist %SETUP_OUTPUT_ISO_PATH% goto err_generated_iso
@@ -114,7 +119,8 @@ set DREAMSDK_INPUT_DIR=%SYSTEM_OBJECTS_INPUT_DIR%\mingw\msys\1.0\opt\dreamsdk
 copy /B %DREAMSDK_INPUT_DIR%\getstart.rtf %IMAGE_OUTPUT_DIR%\readme.rtf >> %LOG_FILE% 2>&1
 copy /B %DREAMSDK_INPUT_DIR%\LICENSE %IMAGE_OUTPUT_DIR%\license.txt >> %LOG_FILE% 2>&1
 copy /B %DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm %IMAGE_OUTPUT_DIR%\dreamsdk.chm >> %LOG_FILE% 2>&1
-echo %SETUP_OUTPUT_BASE_FILE% > %IMAGE_OUTPUT_DIR%\disc_id.diz
+echo %SETUP_OUTPUT_BASE_FILE% > %DISC_ID_DIZ%
+echo Build %PACKAGE_BUILD_VERSION% >> %DISC_ID_DIZ%
 
 :generate_iso
 rem Generate Setup program
@@ -348,7 +354,8 @@ copy /B %_outdir%\host-src\tool\dc-tool*.exe %_dctool_binary_client_file% >> %LO
 call :win2unix _dctool_binary_client_unix_file
 %RUNNER% "strip ""%_dctool_binary_client_unix_file%"""
 %UPX32% -9 "%_dctool_binary_client_file%" >> %LOG_FILE% 2>&1
-echo %_radicalfn% > %IMAGE_OUTPUT_DIR%\disc_id.diz
+echo %_radicalfn% > %DISC_ID_DIZ%
+echo Build %PACKAGE_BUILD_VERSION% >> %DISC_ID_DIZ%
 %UPPER% %IMAGE_OUTPUT_DIR%
 
 :generate_cdi_make_disc
