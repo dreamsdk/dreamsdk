@@ -4,10 +4,11 @@ title %APP_TITLE%
 cls
 
 rem Initialization
+set BASE_NAME=mkimage
 set BASE_DIR=%~dp0
 set BASE_DIR=%BASE_DIR:~0,-1%
 
-set LOG_FILE=%BASE_DIR%\mkimage.log
+set LOG_FILE=%BASE_DIR%\%BASE_NAME%.log
 if exist %LOG_FILE% del %LOG_FILE%
 
 call :log %APP_TITLE%
@@ -15,10 +16,10 @@ call :log
 
 :init
 rem Some temp directory and files
-set TEMP_RESULT_FILE=%TEMP%\~mkimage.tmp
+set TEMP_RESULT_FILE=%TEMP%\~%BASE_NAME%.tmp
 
 rem Read Configuration
-set CONFIG_FILE=%BASE_DIR%\mkimage.ini
+set CONFIG_FILE=%BASE_DIR%\%BASE_NAME%.ini
 if not exist "%CONFIG_FILE%" goto err_config
 for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   set %%i 2> nul
@@ -42,6 +43,9 @@ set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 :check_input
 rem Input Directory
 if not exist %SETUP_INPUT_DIR% goto err_input_dir
+
+rem Generated DreamSDK Setup
+if not exist %SETUP_SOURCE_DIR% goto err_setup_not_generated
 
 :check_output
 rem Output Directory
@@ -130,10 +134,14 @@ if "%errorlevel%+"=="0+" goto generate_cdi_dcload_ip
 goto err_generation
 
 :generate_cdi_dcload_ip
-call :generate_cdi "Internet Protocol" dcload-ip %DREAMCAST_TOOL_INTERNET_PROTOCOL_URL%
+if "%GENERATE_DREAMCAST_TOOL_SERIAL_IMAGE%+"=="1+" (
+  call :generate_cdi "Internet Protocol" dcload-ip %DREAMCAST_TOOL_INTERNET_PROTOCOL_URL%
+)
 
 :generate_cdi_dcload_serial
-call :generate_cdi "Serial" dcload-serial %DREAMCAST_TOOL_SERIAL_URL%
+if "%GENERATE_DREAMCAST_TOOL_INTERNET_PROTOCOL_IMAGE%+"=="1+" (
+  call :generate_cdi "Serial" dcload-serial %DREAMCAST_TOOL_SERIAL_URL%
+)
 
 :finish
 call :log
@@ -157,6 +165,11 @@ goto end
 :err_input_dir
 call :err The specified input directory (SETUP_INPUT_DIR) was not found.
 call :log Directory: "%SETUP_INPUT_DIR%"
+goto end
+
+:err_setup_not_generated
+call :err The DreamSDK Setup has not been generated. You need to generate it.
+call :log Directory: "%SETUP_SOURCE_DIR%"
 goto end
 
 :err_binary_mkisofs
