@@ -99,7 +99,7 @@ rem Settings for final Setup image...
 set SYSID=Win32
 set PREPARER=%PACKAGE_NAME% Setup Generator
 set APPID=%PACKAGE_NAME% %PACKAGE_RELEASE_VERSION%
-call :log Building: %APPID%
+call :log Building: %APPID% (%PACKAGE_BUILD_VERSION%)
 
 rem Generate valid Volume ID
 set VOLUMEID=%PACKAGE_NAME%_%PACKAGE_RELEASE_VERSION%
@@ -151,7 +151,7 @@ goto end
 
 :end
 popd
-if exist %TEMP_RESULT_FILE% del %TEMP_RESULT_FILE%
+if exist "%TEMP_RESULT_FILE%" del "%TEMP_RESULT_FILE%"
 pause
 goto :EOF
 
