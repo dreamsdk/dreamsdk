@@ -49,7 +49,7 @@ if not exist %SETUP_SOURCE_DIR% goto err_setup_not_generated
 
 :check_output
 rem Output Directory
-set SETUP_OUTPUT_DIR=%BASE_DIR%\..\dist
+set SETUP_OUTPUT_DIR=%BASE_DIR%\dist
 if not exist %SETUP_OUTPUT_DIR% mkdir %SETUP_OUTPUT_DIR%
 
 set DCLOAD_INPUT_DIR=%BASE_DIR%\.dcload
