@@ -94,6 +94,9 @@ rem Extract file version from the Setup file...
 %GETVER% FileVersion > %TEMP_RESULT_FILE%
 set /p PACKAGE_BUILD_VERSION=< %TEMP_RESULT_FILE%
 
+rem Getting the current timestamp
+call :get_timestamp TIMESTAMP
+
 :setting_up_parameters
 rem Settings for final Setup image...
 set SYSID=Win32
@@ -124,7 +127,7 @@ copy /B %DREAMSDK_INPUT_DIR%\getstart.rtf %IMAGE_OUTPUT_DIR%\readme.rtf >> %LOG_
 copy /B %DREAMSDK_INPUT_DIR%\LICENSE %IMAGE_OUTPUT_DIR%\license.txt >> %LOG_FILE% 2>&1
 copy /B %DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm %IMAGE_OUTPUT_DIR%\dreamsdk.chm >> %LOG_FILE% 2>&1
 echo %SETUP_OUTPUT_BASE_FILE% > %DISC_ID_DIZ%
-echo Build %PACKAGE_BUILD_VERSION% >> %DISC_ID_DIZ%
+echo Build %PACKAGE_BUILD_VERSION% (%TIMESTAMP%) >> %DISC_ID_DIZ%
 
 :generate_iso
 rem Generate Setup program
@@ -413,4 +416,30 @@ echo icon=setup.exe >> %_autorun_inf%
 echo open=setup.exe >> %_autorun_inf%
 echo label=%_label% >> %_autorun_inf%
 endlocal
+goto :EOF
+
+rem Thanks to: https://stackoverflow.com/a/36410527/3726096
+:get_timestamp
+setlocal EnableDelayedExpansion
+:: put your desired field _delimiter here.
+:: for example, setting _delimiter to a hyphen will separate fields like so:
+:: yyyy-MM-dd_hh-mm-ss
+::
+:: setting _delimiter to nothing will output like so:
+:: yyyyMMdd_hhmmss
+::
+set _part_delimiter=%2
+set _delimiter=%3
+
+set _datestring=%date:~-4,4%%_delimiter%%date:~-7,2%%_delimiter%%date:~-10,2%
+set _timestring=%TIME%
+::TRIM OFF the LAST 3 characters of _timestring, which is the decimal point and hundredths of a second
+set _timestring=%_timestring:~0,-3%
+
+:: Replace colons from _timestring with _delimiter
+set _timestring=%_timestring::=!_delimiter!%
+
+:: if there is a preceeding space substitute with a zero
+set _result=%_datestring%%_part_delimiter%%_timestring: =0%
+endlocal & set %1=%_result%
 goto :EOF
