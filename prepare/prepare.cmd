@@ -155,7 +155,7 @@ if "+%FUNC_RESULT%"=="+0" goto end
 call :copybinary FUNC_RESULT kosports %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
-call :copybinary FUNC_RESULT makelink %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+call :copybinary FUNC_RESULT mkdirln %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_ide_patchers
