@@ -209,10 +209,10 @@ call :unpack %NOT_INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% msys-core-extended %MSY
 call :unpack %NOT_INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% wget %MSYS_BASE_WGET_VERSION% msys-base
 
 rem Extracting Toolchains...
-call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% arm-eabi %TOOLCHAIN_EXPERIMENTAL_ARM_EABI_VERSION% toolchain-experimental
-call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% sh-elf %TOOLCHAIN_EXPERIMENTAL_SH_ELF_VERSION% toolchain-experimental
 call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% arm-eabi %TOOLCHAIN_STABLE_ARM_EABI_VERSION% toolchain-stable
 call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% sh-elf %TOOLCHAIN_STABLE_SH_ELF_VERSION% toolchain-stable
+call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% arm-eabi %TOOLCHAIN_LEGACY_ARM_EABI_VERSION% toolchain-legacy
+call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% sh-elf %TOOLCHAIN_LEGACY_SH_ELF_VERSION% toolchain-legacy
 
 rem Extracting GNU Debugger (GDB)...
 call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% no-python
