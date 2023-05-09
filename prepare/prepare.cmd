@@ -213,6 +213,8 @@ call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% arm-eabi %TOOLCHAIN_STABLE_
 call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% sh-elf %TOOLCHAIN_STABLE_SH_ELF_VERSION% toolchain-stable
 call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% arm-eabi %TOOLCHAIN_LEGACY_ARM_EABI_VERSION% toolchain-legacy
 call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% sh-elf %TOOLCHAIN_LEGACY_SH_ELF_VERSION% toolchain-legacy
+call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% arm-eabi %TOOLCHAIN_TESTING_ARM_EABI_VERSION% toolchain-testing
+call :unpack %INSTALLABLE_PACKAGE_EXTRACT_TO_PARENT% sh-elf %TOOLCHAIN_TESTING_SH_ELF_VERSION% toolchain-testing
 
 rem Extracting GNU Debugger (GDB)...
 call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% no-python
@@ -229,6 +231,7 @@ call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% pyth
 call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.9
 call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.10
 call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.11
+call :unpack %INSTALLABLE_PACKAGE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.12
 
 rem Extracting Addons Command-Line Tools
 call :unpack %NOT_INSTALLABLE_PACKAGE% elevate %ADDONS_CMD_ELEVATE_VERSION% addons-cmd
