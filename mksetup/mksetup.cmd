@@ -28,6 +28,11 @@ for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   )
 )
 
+:check_output_file_already_generated
+set SETUP_OUTPUT_FILE="%SETUP_INPUT_DIR%\bin\setup.exe"
+call :checkfile FUNC_RESULT %SETUP_OUTPUT_FILE%
+if "+%FUNC_RESULT%"=="+1" goto err_output_already_generated
+
 :check_input_dir
 rem Input Directory
 call :checkdir FUNC_RESULT %SETUP_INPUT_DIR%
@@ -83,6 +88,12 @@ goto end
 :err_output_generation
 call :err Unable to generate the Setup.
 call :log Please check the Log file to learn more.
+goto end
+
+:err_output_already_generated
+call :err Setup was already generated.
+call :log Please delete the previous generated file if you want to continue.
+call :log File: %SETUP_OUTPUT_FILE%
 goto end
 
 rem ## Utilities ###############################################################
