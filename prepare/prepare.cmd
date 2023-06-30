@@ -158,6 +158,9 @@ if "+%FUNC_RESULT%"=="+0" goto end
 call :copybinary FUNC_RESULT mkdirln %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
+call :copybinary FUNC_RESULT wtconfig %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
 :dreamsdk_ide_patchers
 call :log Copying IDE Patchers...
 set CODEBLOCKS_PATCHER_OUTPUT_DIR=%BIN_OUTPUT_DIR%\packages\ide\codeblocks
