@@ -82,7 +82,7 @@ prerequisites and execute the 4 scripts described below, in the specified order.
 First of all, you will need to install:
 
 * [DreamSDK](https://dreamsdk.org) - yes, you will need a previous version of
-  DreamSDK to produce a new one.
+  DreamSDK to produce a new one - [Eating_your_own_dog_food](https://en.wikipedia.org/wiki/Eating_your_own_dog_food) principle!
 * [Lazarus IDE](https://www.lazarus-ide.org/) - DreamSDK components are written
   in [Free Pascal](https://www.freepascal.org/). 
 * [Python 3](https://www.python.org/) - some scripts used in the generation
