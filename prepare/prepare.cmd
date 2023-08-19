@@ -391,6 +391,9 @@ set _installable_package=1
 set _unpack_required=1
 set _extract_to_parent=0
 set _warn_if_package_not_found=1
+if "+%_behaviour%"=="+%PKG_FIXED%" (
+  set _installable_package=0
+)
 if "+%_behaviour%"=="+%PKG_FIXED_EXTRACT_TO_PARENT%" (
   set _installable_package=0
   set _extract_to_parent=1
