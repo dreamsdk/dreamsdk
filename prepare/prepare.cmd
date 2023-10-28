@@ -202,13 +202,14 @@ call :log Processing MinGW foundation base package ...
 call :processpkg %PKG_FIXED% mingw-base %MINGW_BASE_VERSION%
 
 call :log Processing MSYS packages ...
+call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% bash %MSYS_BASE_BASH_VERSION% msys-base
 call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% cdrtools %MSYS_BASE_CDRTOOLS_VERSION% msys-base
 call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% curl %MSYS_BASE_CURL_VERSION% msys-base
 call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% dirhash %MSYS_BASE_DIRHASH_VERSION% msys-base
 call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% gawk %MSYS_BASE_GAWK_VERSION% msys-base
 call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% img4dc %MSYS_BASE_IMG4DC_VERSION% msys-base
-call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% libjpeg %MSYS_BASE_LIBJPEG_VERSION% msys-base
 call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% libelf %MSYS_BASE_LIBELF_VERSION% msys-base
+call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% libjpeg %MSYS_BASE_LIBJPEG_VERSION% msys-base
 call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% libpng %MSYS_BASE_LIBPNG_VERSION% msys-base
 call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% mintty %MSYS_BASE_MINTTY_VERSION% msys-base
 call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% msys-core-extended %MSYS_BASE_CORE_EXTENDED_VERSION% msys-base
