@@ -216,12 +216,12 @@ call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% msys-core-extended %MSYS_BASE_COR
 call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% wget %MSYS_BASE_WGET_VERSION% msys-base
 
 call :log Processing toolchains ...
-call :processpkg %PKG_INSTALLABLE% arm-eabi %TOOLCHAIN_STABLE_ARM_EABI_VERSION% toolchain-stable
-call :processpkg %PKG_INSTALLABLE% sh-elf %TOOLCHAIN_STABLE_SH_ELF_VERSION% toolchain-stable
-call :processpkg %PKG_INSTALLABLE% arm-eabi %TOOLCHAIN_LEGACY_ARM_EABI_VERSION% toolchain-legacy
-call :processpkg %PKG_INSTALLABLE% sh-elf %TOOLCHAIN_LEGACY_SH_ELF_VERSION% toolchain-legacy
-call :processpkg %PKG_INSTALLABLE% arm-eabi %TOOLCHAIN_OLDSTABLE_ARM_EABI_VERSION% toolchain-oldstable
-call :processpkg %PKG_INSTALLABLE% sh-elf %TOOLCHAIN_OLDSTABLE_SH_ELF_VERSION% toolchain-oldstable
+call :processpkg %PKG_INSTALLABLE% arm-eabi-toolchain %TOOLCHAIN_STABLE_ARM_EABI_VERSION% stable
+call :processpkg %PKG_INSTALLABLE% sh-elf-toolchain %TOOLCHAIN_STABLE_SH_ELF_VERSION% stable
+call :processpkg %PKG_INSTALLABLE% arm-eabi-toolchain %TOOLCHAIN_LEGACY_ARM_EABI_VERSION% legacy
+call :processpkg %PKG_INSTALLABLE% sh-elf-toolchain %TOOLCHAIN_LEGACY_SH_ELF_VERSION% legacy
+call :processpkg %PKG_INSTALLABLE% arm-eabi-toolchain %TOOLCHAIN_OLDSTABLE_ARM_EABI_VERSION% oldstable
+call :processpkg %PKG_INSTALLABLE% sh-elf-toolchain %TOOLCHAIN_OLDSTABLE_SH_ELF_VERSION% oldstable
 
 call :log Processing GNU Debugger (GDB) ...
 call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% no-python
@@ -266,8 +266,8 @@ set SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE=%SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_
 if not exist %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%
 if exist %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE% del %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE%
 if not exist %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% (
-	call :err File not found: "%SYSTEM_OBJECTS_PROFILE_INPUT_FILE%"
-	goto end
+    call :err File not found: "%SYSTEM_OBJECTS_PROFILE_INPUT_FILE%"
+    goto end
 )
 move %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 call :patch FUNC_RESULT %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% %SYSTEM_OBJECTS_INPUT_DIR%\patches\etc.diff
@@ -363,7 +363,7 @@ call :err Failed Patch: "%_patch%".
 set _result=0
 :patchexit
 endlocal & (
-	set "%~1=%_result%"	
+    set "%~1=%_result%"
 )
 goto :EOF
 
@@ -389,6 +389,10 @@ goto :EOF
 :processpkg
 setlocal EnableDelayedExpansion
 set _behaviour=%1
+set _pkgname=%2
+set _ver=%3
+set _variant=%4
+set _extra=%5
 set _installable_package=1
 set _unpack_required=1
 set _extract_to_parent=0
@@ -407,27 +411,30 @@ if "+%_behaviour%"=="+%PKG_INSTALLABLE_OPTIONAL%" (
   set _unpack_required=0
   set _warn_if_package_not_found=0
 )
-set _base=%2
-set _name=%2
-set _ver=%3
-if not "_%4"=="_" (
-  set _base=%4\%_base%
-  set _name=%2-%4
+set _base=%_pkgname%
+set _name=%_pkgname%
+if not "_%_variant%"=="_" (
+  set _base=%_variant%\%_base%
+  set _name=%_pkgname%-%_variant%
 )
-set _input=%SETUP_PACKAGES_INPUT_DIR%\%_base%\%3\%2-bin.7z
-if not exist %_input% set _input=%SETUP_PACKAGES_INPUT_DIR%\%_base%\%3\%4-%2-bin.7z
+set _input=%SETUP_PACKAGES_INPUT_DIR%\%_base%\%_ver%\%_pkgname%-bin.7z
+if not exist %_input% set _input=%SETUP_PACKAGES_INPUT_DIR%\%_base%\%_ver%\%_variant%-%_pkgname%-bin.7z
 set _output=%OUTPUT_DIR%\%_base%
 if not exist %_input% (
-  set _input=%SETUP_PACKAGES_INPUT_DIR%\%2\%3\%2-%4-bin.7z
-  set _output=%OUTPUT_DIR%\%2\%2-%4
-  set _name=%2-%4
+  set _input=%SETUP_PACKAGES_INPUT_DIR%\%_pkgname%\%_ver%\%_pkgname%-%_variant%-bin.7z
+  set _output=%OUTPUT_DIR%\%_pkgname%\%_pkgname%-%_variant%
+  set _name=%_pkgname%-%_variant%
 )
-if not "$%4"=="$" (
-  if not "#%5"=="#" (
-    set _input=%SETUP_PACKAGES_INPUT_DIR%\%_base%\%3\%2-%5-bin.7z
-    set _output=%OUTPUT_DIR%\%4\%2-%5
-    set _name=%2-%4::%5
+if not "$%_variant%"=="$" (
+  if not "#%_extra%"=="#" (
+    set _input=%SETUP_PACKAGES_INPUT_DIR%\%_base%\%_ver%\%_pkgname%-%_extra%-bin.7z
+    set _output=%OUTPUT_DIR%\%_variant%\%_pkgname%-%_extra%
+    set _name=%_pkgname%-%_variant%::%_extra%
   )
+)
+if "+%_behaviour%"=="+%PKG_INSTALLABLE%" (
+  set _input=%SETUP_PACKAGES_INPUT_DIR%\%_pkgname%\%_ver%\%_pkgname%-bin.7z
+  set _name=%_pkgname%-%_variant%
 )
 if "$%_extract_to_parent%"=="$1" (
   set _output=%_output%\..
@@ -440,11 +447,17 @@ if exist %_input% (
   )
   if "+%_unpack_required%"=="+0" (
     call :log * Copying %_name% ^(%_ver%^) ...
-	if not exist %_output% mkdir %_output%
-	echo. > %_output%\%_radical_filename%.stamp
+    if not exist %_output% mkdir %_output%
+    echo. > %_output%\%_radical_filename%.stamp
   )
-  if "$%_installable_package%"=="$1" (    
+  if "$%_installable_package%"=="$1" (
     copy /B %_input% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+    if "+%_behaviour%"=="+%PKG_INSTALLABLE%" (
+      if exist %BIN_PACKAGES_OUTPUT_DIR%\%_name%-bin.7z (
+        del %BIN_PACKAGES_OUTPUT_DIR%\%_name%-bin.7z
+	  )
+      ren %BIN_PACKAGES_OUTPUT_DIR%\%_pkgname%-bin.7z %_name%-bin.7z
+    )
   )
 )
 if "%_warn_if_package_not_found%"=="0" goto unpack_exit
@@ -498,15 +511,15 @@ call :warn %_name% is compiled in DEBUG mode...
 :copybinarycompress
 %UPX32% -9 %_upx_optional_switches% %_target%\%_name%.exe >> %LOG_FILE% 2>&1
 if "%SIGN_BINARIES%+"=="1+" (
-	call %DUALSIGN% %_target%\%_name%.exe >> %LOG_FILE% 2>&1	   
-	if "$!errorlevel!"=="$0" goto copybinaryexit
+    call %DUALSIGN% %_target%\%_name%.exe >> %LOG_FILE% 2>&1
+    if "$!errorlevel!"=="$0" goto copybinaryexit
     call :err Failing Signing Project: "%_name%".
     set _result=0
     goto copybinaryexit
 )
 :copybinaryexit
 endlocal & (
-	set "%~1=%_result%"	
+    set "%~1=%_result%"
 )
 goto :EOF
 
@@ -534,8 +547,8 @@ set "_python_version_major=%_python_version:~0,1%"
 :get_version_python_exit
 if exist %_python_buffer_temp% del %_python_buffer_temp%
 endlocal & (
-	set "%~1=%_python_version_major%"
-	set "%~2=%_python_version%"
+    set "%~1=%_python_version_major%"
+    set "%~2=%_python_version%"
 )
 goto :EOF
 
