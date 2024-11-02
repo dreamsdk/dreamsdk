@@ -31,8 +31,8 @@ for dname, dirs, files in os.walk(path):
     for fname in files:
         fpath = os.path.join(dname, fname)
         if is_text_file(fpath):
-            with open(fpath) as f:
+            with open(fpath, encoding='ISO-8859-1') as f:
                 s = f.read()
             s = s.replace(stext, rtext)
-            with open(fpath, "w") as f:
+            with open(fpath, "w", encoding='ISO-8859-1') as f:
                 f.write(s)
