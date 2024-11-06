@@ -3,6 +3,9 @@ set APP_TITLE=Source Packages Preparer for DreamSDK Setup
 title %APP_TITLE%
 cls
 
+rem Debug Mode: Enable me if you want to troubleshoot something
+set DEBUG_MODE=0
+
 rem Initialization
 set BASE_DIR=%~dp0
 set BASE_DIR=%BASE_DIR:~0,-1%
@@ -193,69 +196,69 @@ copy /B %HELP_INPUT_FILE% %BIN_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 :processing
 call :log Processing packages ...
 
-set PKG_FIXED=0
-set PKG_FIXED_EXTRACT_TO_PARENT=1
-set PKG_INSTALLABLE=2
-set PKG_INSTALLABLE_OPTIONAL=3
+set PROCESSPKG_UNPACK=0
+set PROCESSPKG_UNPACK_EXTRACT_TO_PARENT=1
+set PROCESSPKG_TOOLCHAIN=2
+set PROCESSPKG_TOOLCHAIN_OPTIONAL=3
 
 call :log Processing MinGW foundation base package ...
-call :processpkg %PKG_FIXED% mingw-base %MINGW_BASE_VERSION%
+call :processpkg %PROCESSPKG_UNPACK% mingw-base %MINGW_BASE_VERSION%
 
 call :log Processing MSYS packages ...
-call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% bash %MSYS_BASE_BASH_VERSION% msys-base
-call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% cdrtools %MSYS_BASE_CDRTOOLS_VERSION% msys-base
-call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% curl %MSYS_BASE_CURL_VERSION% msys-base
-call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% dirhash %MSYS_BASE_DIRHASH_VERSION% msys-base
-call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% gawk %MSYS_BASE_GAWK_VERSION% msys-base
-call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% img4dc %MSYS_BASE_IMG4DC_VERSION% msys-base
-call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% libelf %MSYS_BASE_LIBELF_VERSION% msys-base
-call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% libjpeg %MSYS_BASE_LIBJPEG_VERSION% msys-base
-call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% libpng %MSYS_BASE_LIBPNG_VERSION% msys-base
-call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% mintty %MSYS_BASE_MINTTY_VERSION% msys-base
-call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% msys-core-extended %MSYS_BASE_CORE_EXTENDED_VERSION% msys-base
-call :processpkg %PKG_FIXED_EXTRACT_TO_PARENT% wget %MSYS_BASE_WGET_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% bash %MSYS_BASE_BASH_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% cdrtools %MSYS_BASE_CDRTOOLS_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% curl %MSYS_BASE_CURL_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% dirhash %MSYS_BASE_DIRHASH_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% gawk %MSYS_BASE_GAWK_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% img4dc %MSYS_BASE_IMG4DC_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libelf %MSYS_BASE_LIBELF_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libjpeg %MSYS_BASE_LIBJPEG_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libpng %MSYS_BASE_LIBPNG_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% mintty %MSYS_BASE_MINTTY_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% msys-core-extended %MSYS_BASE_CORE_EXTENDED_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% wget %MSYS_BASE_WGET_VERSION% msys-base
 
 call :log Processing toolchains ...
-call :processpkg %PKG_INSTALLABLE% arm-eabi-toolchain %TOOLCHAIN_STABLE_ARM_EABI_VERSION% stable
-call :processpkg %PKG_INSTALLABLE% sh-elf-toolchain %TOOLCHAIN_STABLE_SH_ELF_VERSION% stable
-call :processpkg %PKG_INSTALLABLE% arm-eabi-toolchain %TOOLCHAIN_LEGACY_ARM_EABI_VERSION% legacy
-call :processpkg %PKG_INSTALLABLE% sh-elf-toolchain %TOOLCHAIN_LEGACY_SH_ELF_VERSION% legacy
-call :processpkg %PKG_INSTALLABLE% arm-eabi-toolchain %TOOLCHAIN_OLDSTABLE_ARM_EABI_VERSION% oldstable
-call :processpkg %PKG_INSTALLABLE% sh-elf-toolchain %TOOLCHAIN_OLDSTABLE_SH_ELF_VERSION% oldstable
+call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_STABLE_ARM_EABI_VERSION% stable toolchain
+call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_STABLE_SH_ELF_VERSION% stable toolchain
+call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_LEGACY_ARM_EABI_VERSION% legacy toolchain
+call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_LEGACY_SH_ELF_VERSION% legacy toolchain
+call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_OLDSTABLE_ARM_EABI_VERSION% oldstable toolchain
+call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_OLDSTABLE_SH_ELF_VERSION% oldstable toolchain
 
 call :log Processing GNU Debugger (GDB) ...
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% no-python
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-2.7
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.0
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.1
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.2
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.3
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.4
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.5
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.6
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.7
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.8
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.9
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.10
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.11
-call :processpkg %PKG_INSTALLABLE_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.12
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% no-python
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-2.7
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.0
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.1
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.2
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.3
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.4
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.5
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.6
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.7
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.8
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.9
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.10
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.11
+call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.12
 
 call :log Processing addons command-line tools ...
-call :processpkg %PKG_FIXED% elevate %ADDONS_CMD_ELEVATE_VERSION% addons-cmd
-call :processpkg %PKG_FIXED% pvr2png %ADDONS_CMD_PVR2PNG_VERSION% addons-cmd
-call :processpkg %PKG_FIXED% txfutils %ADDONS_CMD_TXFUTILS_VERSION% addons-cmd
-call :processpkg %PKG_FIXED% txfutils %ADDONS_CMD_TXFUTILS_VERSION% addons-cmd txflib
-call :processpkg %PKG_FIXED% vmutool %ADDONS_CMD_VMUTOOL_VERSION% addons-cmd
+call :processpkg %PROCESSPKG_UNPACK% elevate %ADDONS_CMD_ELEVATE_VERSION% addons-cmd
+call :processpkg %PROCESSPKG_UNPACK% pvr2png %ADDONS_CMD_PVR2PNG_VERSION% addons-cmd
+call :processpkg %PROCESSPKG_UNPACK% txfutils %ADDONS_CMD_TXFUTILS_VERSION% addons-cmd
+call :processpkg %PROCESSPKG_UNPACK% txfutils %ADDONS_CMD_TXFUTILS_VERSION% addons-cmd txflib
+call :processpkg %PROCESSPKG_UNPACK% vmutool %ADDONS_CMD_VMUTOOL_VERSION% addons-cmd
 
 call :log Processing addons GUI tools ...
-call :processpkg %PKG_FIXED% bdreams %ADDONS_GUI_BDREAMS_VERSION% addons-gui
-call :processpkg %PKG_FIXED% buildsbi %ADDONS_GUI_BUILDSBI_VERSION% addons-gui
-call :processpkg %PKG_FIXED% checker %ADDONS_GUI_CHECKER_VERSION% addons-gui
-call :processpkg %PKG_FIXED% ipwriter %ADDONS_GUI_IPWRITER_VERSION% addons-gui
-call :processpkg %PKG_FIXED% ipwriter %ADDONS_GUI_IPWRITER_VERSION% addons-gui iplogos
-call :processpkg %PKG_FIXED% mrwriter %ADDONS_GUI_MRWRITER_VERSION% addons-gui
-call :processpkg %PKG_FIXED% sbinducr %ADDONS_GUI_SBINDUCR_VERSION% addons-gui
-call :processpkg %PKG_FIXED% vmutool %ADDONS_GUI_VMUTOOL_VERSION% addons-gui
+call :processpkg %PROCESSPKG_UNPACK% bdreams %ADDONS_GUI_BDREAMS_VERSION% addons-gui
+call :processpkg %PROCESSPKG_UNPACK% buildsbi %ADDONS_GUI_BUILDSBI_VERSION% addons-gui
+call :processpkg %PROCESSPKG_UNPACK% checker %ADDONS_GUI_CHECKER_VERSION% addons-gui
+call :processpkg %PROCESSPKG_UNPACK% ipwriter %ADDONS_GUI_IPWRITER_VERSION% addons-gui
+call :processpkg %PROCESSPKG_UNPACK% ipwriter %ADDONS_GUI_IPWRITER_VERSION% addons-gui iplogos
+call :processpkg %PROCESSPKG_UNPACK% mrwriter %ADDONS_GUI_MRWRITER_VERSION% addons-gui
+call :processpkg %PROCESSPKG_UNPACK% sbinducr %ADDONS_GUI_SBINDUCR_VERSION% addons-gui
+call :processpkg %PROCESSPKG_UNPACK% vmutool %ADDONS_GUI_VMUTOOL_VERSION% addons-gui
 
 :profile
 call :log Generating profile file...
@@ -388,81 +391,117 @@ goto :EOF
 
 :processpkg
 setlocal EnableDelayedExpansion
+rem Get all parameters from this function
 set _behaviour=%1
 set _pkgname=%2
-set _ver=%3
-set _variant=%4
-set _extra=%5
-set _installable_package=1
-set _unpack_required=1
-set _extract_to_parent=0
+set _pkgver=%3
+set _pkgvariant=%4
+set _pkgextra=%5
+rem Set flags to their default values
+set _unpack_required=0
+set _pkgextract_to_parent=0
 set _warn_if_package_not_found=1
-if "+%_behaviour%"=="+%PKG_FIXED%" (
-  set _installable_package=0
+rem Apply the correct flag configuration depending on behaviour
+if "+%_behaviour%"=="+%PROCESSPKG_UNPACK%" (
+  set _unpack_required=1
 )
-if "+%_behaviour%"=="+%PKG_FIXED_EXTRACT_TO_PARENT%" (
-  set _installable_package=0
-  set _extract_to_parent=1
+if "+%_behaviour%"=="+%PROCESSPKG_UNPACK_EXTRACT_TO_PARENT%" (  
+  set _unpack_required=1
+  set _pkgextract_to_parent=1
 )
-if "+%_behaviour%"=="+%PKG_INSTALLABLE%" (
-  set _unpack_required=0
-)
-if "+%_behaviour%"=="+%PKG_INSTALLABLE_OPTIONAL%" (
-  set _unpack_required=0
+if "+%_behaviour%"=="+%PROCESSPKG_TOOLCHAIN_OPTIONAL%" (
   set _warn_if_package_not_found=0
 )
-set _base=%_pkgname%
-set _name=%_pkgname%
-if not "_%_variant%"=="_" (
-  set _base=%_variant%\%_base%
-  set _name=%_pkgname%-%_variant%
+rem Debug: Display variables
+if "+%DEBUG_MODE%"=="+1" (
+  echo * Variables:
+  echo _behaviour=%_behaviour%
+  echo _pkgname=%_pkgname%
+  echo _pkgver=%_pkgver%
+  echo _pkgvariant=%_pkgvariant%
+  echo _pkgextra=%_pkgextra%
+  echo * Flags:
+  echo _unpack_required=%_unpack_required%
+  echo _pkgextract_to_parent=%_pkgextract_to_parent%
+  echo _warn_if_package_not_found=%_warn_if_package_not_found%
 )
-set _input=%SETUP_PACKAGES_INPUT_DIR%\%_base%\%_ver%\%_pkgname%-bin.7z
-if not exist %_input% set _input=%SETUP_PACKAGES_INPUT_DIR%\%_base%\%_ver%\%_variant%-%_pkgname%-bin.7z
-set _output=%OUTPUT_DIR%\%_base%
+rem Compute input/output variables
+set _pkgdisplayname=%_pkgname%
+set _pkgbasefilename=%_pkgname%-bin
+set _pkgtempbase=%_pkgname%
+if not "+%_pkgvariant%"=="+" (
+  set _pkgtempbase=%_pkgvariant%\%_pkgtempbase%
+  set _pkgdisplayname=%_pkgname%-%_pkgvariant%
+)
+set _output=%OUTPUT_DIR%\%_pkgtempbase%
+if not "+%_pkgextra%"=="+" (
+  set _pkgdisplayname=%_pkgdisplayname%::%_pkgextra%
+  set _pkgbasefilename=%_pkgname%-%_pkgextra%-bin
+  set _output=%OUTPUT_DIR%\%_pkgvariant%\%_pkgname%-%_pkgextra%
+)
+set _input=%SETUP_PACKAGES_INPUT_DIR%\%_pkgtempbase%\%_pkgver%\%_pkgbasefilename%.7z
 if not exist %_input% (
-  set _input=%SETUP_PACKAGES_INPUT_DIR%\%_pkgname%\%_ver%\%_pkgname%-%_variant%-bin.7z
-  set _output=%OUTPUT_DIR%\%_pkgname%\%_pkgname%-%_variant%
-  set _name=%_pkgname%-%_variant%
+  set _pkgbasefilename=%_pkgvariant%-%_pkgbasefilename%
+  set _input=%SETUP_PACKAGES_INPUT_DIR%\%_pkgtempbase%\%_pkgver%\%_pkgbasefilename%.7z
 )
-if not "$%_variant%"=="$" (
-  if not "#%_extra%"=="#" (
-    set _input=%SETUP_PACKAGES_INPUT_DIR%\%_base%\%_ver%\%_pkgname%-%_extra%-bin.7z
-    set _output=%OUTPUT_DIR%\%_variant%\%_pkgname%-%_extra%
-    set _name=%_pkgname%-%_variant%::%_extra%
-  )
+if not exist %_input% (
+  set _pkgdisplayname=%_pkgname%-%_pkgvariant%
+  set _pkgbasefilename=%_pkgname%-%_pkgvariant%-bin
+  set _input=%SETUP_PACKAGES_INPUT_DIR%\%_pkgname%\%_pkgver%\!_pkgbasefilename!.7z
+  set _output=%OUTPUT_DIR%\%_pkgname%\%_pkgname%-%_pkgvariant%
 )
-if "+%_behaviour%"=="+%PKG_INSTALLABLE%" (
-  set _input=%SETUP_PACKAGES_INPUT_DIR%\%_pkgname%\%_ver%\%_pkgname%-bin.7z
-  set _name=%_pkgname%-%_variant%
+if "+%_behaviour%"=="+%PROCESSPKG_TOOLCHAIN%" (
+  set _pkgdisplayname=%_pkgname%-%_pkgvariant%
+  set _pkgbasefilename=!_pkgname!-bin
+  set _input=%SETUP_PACKAGES_INPUT_DIR%\%_pkgname%\%_pkgver%\!_pkgbasefilename!.7z
+  set _output=%OUTPUT_DIR%\%_pkgextra%-%_pkgvariant%
 )
-if "$%_extract_to_parent%"=="$1" (
+set _pkginputfilename=%_pkgbasefilename%
+for %%f in ("%_input%") do set _pkginputfilename=%%~nf
+if "$%_pkgextract_to_parent%"=="$1" (
   set _output=%_output%\..
 )
-for %%f in ("%_input%") do set _radical_filename=%%~nf
+set _stampfilepath=.
+if "+%_behaviour%"=="+%PROCESSPKG_TOOLCHAIN_OPTIONAL%" (
+  set _stampfilepath=%_output%\%_pkginputfilename%.stamp
+)
+if "+%_behaviour%"=="+%PROCESSPKG_TOOLCHAIN%" (
+  set _stampfilepath=%_output%\%_pkgname%-%_pkgvariant%-bin.stamp
+)
+rem Debug: Display variables for targets
+if "+%DEBUG_MODE%"=="+1" (
+  echo * Targets:
+  echo _input=%_input%
+  echo _output=%_output%
+  echo _pkgdisplayname=%_pkgdisplayname%
+  echo _pkginputfilename=%_pkginputfilename%
+  pause
+)
+rem Execute the processpkg operation
 if exist %_input% (
   if "+%_unpack_required%"=="+1" (
-    call :log * Unpacking %_name% ^(%_ver%^) ...  
+    call :log * Unpacking %_pkgdisplayname% ^(%_pkgver%^) ...  
     %SEVENZIP% x "%_input%" -o"%_output%" -y >> %LOG_FILE% 2>&1
+  ) else (
+    rem Copy the package to the "binary-packages" directory
+    call :log * Copying %_pkgdisplayname% ^(%_pkgver%^) ...
+    copy /B %_input% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1    
   )
-  if "+%_unpack_required%"=="+0" (
-    call :log * Copying %_name% ^(%_ver%^) ...
+  if not "+%_stampfilepath%"=="+." (
+    rem Then generate a stamp file if required    
     if not exist %_output% mkdir %_output%
-    echo. > %_output%\%_radical_filename%.stamp
+    echo. > %_stampfilepath%
   )
-  if "$%_installable_package%"=="$1" (
-    copy /B %_input% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
-    if "+%_behaviour%"=="+%PKG_INSTALLABLE%" (
-      if exist %BIN_PACKAGES_OUTPUT_DIR%\%_name%-bin.7z (
-        del %BIN_PACKAGES_OUTPUT_DIR%\%_name%-bin.7z
-	  )
-      ren %BIN_PACKAGES_OUTPUT_DIR%\%_pkgname%-bin.7z %_name%-bin.7z
+  if "+%_behaviour%"=="+%PROCESSPKG_TOOLCHAIN%" (
+    if exist %BIN_PACKAGES_OUTPUT_DIR%\%_pkgname%-%_pkgvariant%-bin.7z (
+      del %BIN_PACKAGES_OUTPUT_DIR%\%_pkgname%-%_pkgvariant%-bin.7z
     )
+    ren %BIN_PACKAGES_OUTPUT_DIR%\%_pkgbasefilename%.7z %_pkgname%-%_pkgvariant%-bin.7z
   )
 )
 if "%_warn_if_package_not_found%"=="0" goto unpack_exit
 if not exist %_input% (
-  call :warn Package not found: %_name% ^(%_ver%^)
+  call :warn Package not found: %_pkgdisplayname% ^(%_pkgver%^)
 )
 :unpack_exit
 endlocal
