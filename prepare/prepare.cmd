@@ -219,12 +219,12 @@ call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% msys-core-extended %MSYS_
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% wget %MSYS_BASE_WGET_VERSION% msys-base
 
 call :log Processing toolchains ...
-call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_STABLE_ARM_EABI_VERSION% stable toolchain
-call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_STABLE_SH_ELF_VERSION% stable toolchain
-call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_LEGACY_ARM_EABI_VERSION% legacy toolchain
-call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_LEGACY_SH_ELF_VERSION% legacy toolchain
-call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_OLDSTABLE_ARM_EABI_VERSION% oldstable toolchain
-call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_OLDSTABLE_SH_ELF_VERSION% oldstable toolchain
+call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_STABLE_ARM_EABI_VERSION% stable toolchain arm-eabi
+call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_STABLE_SH_ELF_VERSION% stable toolchain sh-elf
+call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_LEGACY_ARM_EABI_VERSION% legacy toolchain arm-eabi
+call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_LEGACY_SH_ELF_VERSION% legacy toolchain sh-elf
+call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_OLDSTABLE_ARM_EABI_VERSION% oldstable toolchain arm-eabi
+call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_OLDSTABLE_SH_ELF_VERSION% oldstable toolchain sh-elf
 
 call :log Processing GNU Debugger (GDB) ...
 call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% no-python
@@ -397,6 +397,7 @@ set _pkgname=%2
 set _pkgver=%3
 set _pkgvariant=%4
 set _pkgextra=%5
+set _pkgextra2=%6
 rem Set flags to their default values
 set _unpack_required=0
 set _pkgextract_to_parent=0
@@ -454,7 +455,7 @@ if "+%_behaviour%"=="+%PROCESSPKG_TOOLCHAIN%" (
   set _pkgdisplayname=%_pkgname%-%_pkgvariant%
   set _pkgbasefilename=!_pkgname!-bin
   set _input=%SETUP_PACKAGES_INPUT_DIR%\%_pkgname%\%_pkgver%\!_pkgbasefilename!.7z
-  set _output=%OUTPUT_DIR%\%_pkgextra%-%_pkgvariant%
+  set _output=%OUTPUT_DIR%\%_pkgextra%-%_pkgvariant%\%_pkgextra2%
 )
 set _pkginputfilename=%_pkgbasefilename%
 for %%f in ("%_input%") do set _pkginputfilename=%%~nf
