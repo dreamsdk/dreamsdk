@@ -204,6 +204,18 @@ goto end
 
 rem ## Utilities ###############################################################
 
+:normalizepath
+rem Thanks to: https://stackoverflow.com/a/33404867
+setlocal EnableDelayedExpansion
+call :normalizepathsub %%%1%%
+endlocal & (
+	set "%1=%_normalizepathsub_absolutepath%"
+)
+goto :EOF
+:normalizepathsub
+set _normalizepathsub_absolutepath=%~f1
+goto :EOF
+
 :trim
 rem Thanks to: https://stackoverflow.com/a/19686956/3726096
 setlocal EnableDelayedExpansion

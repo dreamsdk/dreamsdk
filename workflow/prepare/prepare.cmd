@@ -40,31 +40,40 @@ set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
 set DUALSIGN="%SETUP_HELPERS_INPUT_DIR%\dualsign\dualsign.cmd"
 
 rem Input directories
+call :normalizepath CODEBLOCKS_PATCHER_INPUT_DIR
 call :checkdir FUNC_RESULT %CODEBLOCKS_PATCHER_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
+call :normalizepath DOCUMENTATION_INPUT_DIR
 call :checkdir FUNC_RESULT %DOCUMENTATION_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
+call :normalizepath HELPERS_INPUT_DIR
 call :checkdir FUNC_RESULT %HELPERS_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
+call :normalizepath MANAGER_INPUT_DIR
 call :checkdir FUNC_RESULT %MANAGER_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
+call :normalizepath RUNNER_INPUT_DIR
 call :checkdir FUNC_RESULT %RUNNER_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
+call :normalizepath SETUP_PACKAGES_INPUT_DIR
 call :checkdir FUNC_RESULT %SETUP_PACKAGES_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
+call :normalizepath SHELL_INPUT_DIR
 call :checkdir FUNC_RESULT %SHELL_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
+call :normalizepath SYSTEM_OBJECTS_INPUT_DIR
 call :checkdir FUNC_RESULT %SYSTEM_OBJECTS_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
 rem Output directory
+call :normalizepath SETUP_OUTPUT_DIR
 call :checkdir FUNC_RESULT %SETUP_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
@@ -336,6 +345,18 @@ call :log Please read the "documentation" repository for more information.
 goto end
 
 rem ## Utilities ###############################################################
+
+:normalizepath
+rem Thanks to: https://stackoverflow.com/a/33404867
+setlocal EnableDelayedExpansion
+call :normalizepathsub %%%1%%
+endlocal & (
+	set "%1=%_normalizepathsub_absolutepath%"
+)
+goto :EOF
+:normalizepathsub
+set _normalizepathsub_absolutepath=%~f1
+goto :EOF
 
 :trim
 rem Thanks to: https://stackoverflow.com/a/19686956/3726096

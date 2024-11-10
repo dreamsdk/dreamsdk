@@ -28,6 +28,10 @@ for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   )
 )
 
+rem Convert relative paths to absolute paths
+call :normalizepath SETUP_INPUT_DIR
+call :normalizepath SETUP_HELPERS_INPUT_DIR
+
 :check_output_file_already_generated
 set SETUP_OUTPUT_FILE="%SETUP_INPUT_DIR%\bin\setup.exe"
 call :checkfile FUNC_RESULT %SETUP_OUTPUT_FILE%
@@ -97,6 +101,18 @@ call :log File: %SETUP_OUTPUT_FILE%
 goto end
 
 rem ## Utilities ###############################################################
+
+:normalizepath
+rem Thanks to: https://stackoverflow.com/a/33404867
+setlocal EnableDelayedExpansion
+call :normalizepathsub %%%1%%
+endlocal & (
+	set "%1=%_normalizepathsub_absolutepath%"
+)
+goto :EOF
+:normalizepathsub
+set _normalizepathsub_absolutepath=%~f1
+goto :EOF
 
 :trim
 rem Thanks to: https://stackoverflow.com/a/19686956/3726096

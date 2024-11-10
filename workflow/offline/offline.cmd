@@ -37,6 +37,7 @@ rem Input Directory
 call :get_temp_working_dir DreamSDK-Offline-Working INPUT_DIR
 
 rem Output Directory
+call :normalizepath SETUP_OUTPUT_DIR
 if not exist "%SETUP_OUTPUT_DIR%" goto err_output_dir
 set OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.sources
 if not exist "%OUTPUT_DIR%" mkdir %OUTPUT_DIR%
@@ -246,6 +247,18 @@ call :err Please install DreamSDK before using this script.
 goto end
 
 rem ## Utilities ###############################################################
+
+:normalizepath
+rem Thanks to: https://stackoverflow.com/a/33404867
+setlocal EnableDelayedExpansion
+call :normalizepathsub %%%1%%
+endlocal & (
+	set "%1=%_normalizepathsub_absolutepath%"
+)
+goto :EOF
+:normalizepathsub
+set _normalizepathsub_absolutepath=%~f1
+goto :EOF
 
 :trim
 rem Thanks to: https://stackoverflow.com/a/19686956/3726096
