@@ -19,15 +19,16 @@ for interacting with the Sega Dreamcast hardware), the associated/required
 programs made for this package
 (e.g., [DreamSDK Manager](https://github.com/dreamsdk/manager)). DreamSDK is
 compatible with Windows XP and greater (e.g, it has been well tested on Windows
-10).
+1).
 
-📥 [**Download the official release here**](http://dreamsdk.org/).
+🌐 [**Browse the official website here**](https://www.dreamsdk.org/)
+📥 [**Download the official release here**](https://github.com/dreamsdk/dreamsdk/releases)
 
 ## How to use DreamSDK after installing it?
 
 After installing the package on your computer, you have 2 options:
 
-* Use the **DreamSDK Shell** and use the package directly from the command-line;
+* Use the **DreamSDK Shell** and then use the package directly from the command-line;
 * Use an IDE: currently, only [Code::Blocks](http://codeblocks.org/) is
   officially supported.
 
@@ -52,7 +53,7 @@ in the `utils/dc-chain` directory from the KallistiOS repository).
 
 ## Purpose of this repository
 
-This repository contains everything you need to produce **DreamSDK**
+This repository contains everything you need to produce a **DreamSDK**
 installation packages. Using this repository you'll be able to generate the 3
 official installation packages ... :
 
@@ -82,15 +83,16 @@ prerequisites and execute the 4 scripts described below, in the specified order.
 First of all, you will need to install:
 
 * [DreamSDK](https://dreamsdk.org) - yes, you will need a previous version of
-  DreamSDK to produce a new one - [Eating_your_own_dog_food](https://en.wikipedia.org/wiki/Eating_your_own_dog_food) principle!
+  DreamSDK to produce a new one - [Eating your own dog food](https://en.wikipedia.org/wiki/Eating_your_own_dog_food)
+  principle!
 * [Lazarus IDE](https://www.lazarus-ide.org/) - DreamSDK components are written
-  in [Free Pascal](https://www.freepascal.org/). 
+  in [Free Pascal](https://www.freepascal.org/). You have to install the 32-bit
+  extension as well.
 * [Python 3](https://www.python.org/) - some scripts used in the generation
   process are written in Python.
 * [Git](https://git-scm.com/) - used for retriving some components from Git
   repositories.
-* [UPX](https://upx.github.io/) - DreamSDK binaries are packed with UPX, **using
-  the 32-bit version**.
+* [UPX](https://upx.github.io/) - DreamSDK binaries are packed with UPX.
 * [7-Zip](https://www.7-zip.org/) - some scripts uses 7-Zip for compression.
 * [Inno Setup 5](https://files.jrsoftware.org/is/5/innosetup-5.6.1-unicode.exe) -
   the tool used for creating the installer. Note that you should use the v5.x
@@ -100,38 +102,15 @@ First of all, you will need to install:
 
 ### Cloning all repositories on your computer
 
-You will need to clone all repositories linked to DreamSDK in the same
-directory. It could be whatever directory you want but it's better to avoid
-spaces in the path.
+You will need to **clone** the main DreamSDK repository (the one that contains
+this [read-me](README.md) file). It could be whatever directory you want but
+it's better to avoid spaces in the path.
 
-Repositories to clone are:
+After cloning this repository, please run the following script:
 
-* [codeblocks-patcher](https://github.com/dreamsdk/codeblocks-patcher) - 
-  patcher for adding DreamSDK support to [Code::Blocks IDE](http://codeblocks.org/)
-* [common](https://github.com/dreamsdk/common) -
-  common library/classes
-* [documentation](https://github.com/dreamsdk/documentation) - 
-  DreamSDK documentation in [CHM format](https://en.wikipedia.org/wiki/Microsoft_Compiled_HTML_Help)
-* [dreamsdk](https://github.com/dreamsdk/dreamsdk) - this repository
-* [helpers](https://github.com/dreamsdk/helpers) -
-  some utilities used by DreamSDK itself
-* [manager](https://github.com/dreamsdk/manager) -
-  DreamSDK Manager, the central utility of the DreamSDK package
-* [setup-generator](https://github.com/dreamsdk/setup-generator) -
-  the [Inno Setup](https://jrsoftware.org/isinfo.php) script used for producting
-  the setup files
-* [setup-helpers](https://github.com/dreamsdk/setup-helpers) -
-  some utilities only used by DreamSDK Setup
-* [setup-packages](https://github.com/dreamsdk/setup-packages) -
-  the packages that make DreamSDK itself
-* [shell-launcher](https://github.com/dreamsdk/shell-launcher) -
-  the main application of DreamSDK, the DreamSDK Shell
-* [shell-runner](https://github.com/dreamsdk/shell-runner) -
-  this utility is used for executing DreamSDK commands directly in Windows
-  Shell.
-* [system-objects](https://github.com/dreamsdk/system-objects) - some files used
-  for converting a [standard MinGW installation](https://mingw.osdn.io/) into
-  DreamSDK.
+	.\scripts\init.cmd
+
+All Git submodules should be downloaded.
 
 ### Installing the previous DreamSDK package
 
@@ -152,11 +131,11 @@ binaries should be generated in 32-bit only, as DreamSDK is a package full of
 
 To install Lazarus IDE, you should install (assuming you're on 64-bit Windows):
 
-1. Install `lazarus-x.y.z-fpc-x.y.z-win64.exe`
-2. Install `lazarus-x.y.z-fpc-x.y.z-cross-i386-win32-win64.exe`
+1. Install `lazarus-{x.y.z}-fpc-{x.y.z}-win64.exe`
+2. Install `lazarus-{x.y.z}-fpc-{x.y.z}-cross-i386-win32-win64.exe`
 3. Start Lazarus IDE and create a new project (just to access to the main menu)
 4. In the main menu, click on `Package` > `Online Package Manager...`.
-5. Search for the following package: `Synapse`. Install the `Synapse X.YY`
+5. Search for the following package: `Synapse`. Install the `Synapse {x.yy}`
    package by click on the `Install` button. Do the same with the
    `UniqueInstance` package. You may recreate the `Normal Profiles` if asked.
 
@@ -176,7 +155,7 @@ For all these components, you may use the standard installation process.
 ### Installing UPX
 
 There is no installer for UPX, all you need to do is to extract it in a fixed
-location. Pay attention that you need to use the **32-bit version** of UPX!
+location.
 
 ### Installing Inno Setup 5
 
@@ -237,3 +216,35 @@ For building Code::Blocks you will need some more tools
 (To be continued)
 
 
+## About the submodules
+
+(work in progress)
+
+Repositories to clone are:
+
+* [codeblocks-patcher](https://github.com/dreamsdk/codeblocks-patcher) - 
+  patcher for adding DreamSDK support to [Code::Blocks IDE](http://codeblocks.org/)
+* [common](https://github.com/dreamsdk/common) -
+  common library/classes
+* [documentation](https://github.com/dreamsdk/documentation) - 
+  DreamSDK documentation in [CHM format](https://en.wikipedia.org/wiki/Microsoft_Compiled_HTML_Help)
+* [dreamsdk](https://github.com/dreamsdk/dreamsdk) - this repository
+* [helpers](https://github.com/dreamsdk/helpers) -
+  some utilities used by DreamSDK itself
+* [manager](https://github.com/dreamsdk/manager) -
+  DreamSDK Manager, the central utility of the DreamSDK package
+* [setup-generator](https://github.com/dreamsdk/setup-generator) -
+  the [Inno Setup](https://jrsoftware.org/isinfo.php) script used for producting
+  the setup files
+* [setup-helpers](https://github.com/dreamsdk/setup-helpers) -
+  some utilities only used by DreamSDK Setup
+* [setup-packages](https://github.com/dreamsdk/setup-packages) -
+  the packages that make DreamSDK itself
+* [shell-launcher](https://github.com/dreamsdk/shell-launcher) -
+  the main application of DreamSDK, the DreamSDK Shell
+* [shell-runner](https://github.com/dreamsdk/shell-runner) -
+  this utility is used for executing DreamSDK commands directly in Windows
+  Shell.
+* [system-objects](https://github.com/dreamsdk/system-objects) - some files used
+  for converting a [standard MinGW installation](https://mingw.osdn.io/) into
+  DreamSDK.
