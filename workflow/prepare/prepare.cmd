@@ -548,7 +548,9 @@ if not exist "%_project%" (
   set _result=0
   goto copybinaryexit
 )
-%LAZBUILD% %_project% --build-mode="Release" --verbose >> %LOG_FILE% 2>&1
+set LAZDEBUG=
+if "+%DEBUG_MODE%"=="+1" set LAZDEBUG=--verbose
+%LAZBUILD% %_project% --build-mode="Release" %LAZDEBUG% >> %LOG_FILE% 2>&1
 if "$!errorlevel!"=="$0" goto copybinarybuild
 call :err Failing Building Project: "%_name%".
 set _result=0
