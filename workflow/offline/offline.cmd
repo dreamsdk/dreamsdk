@@ -32,6 +32,7 @@ rem Utilities
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 set PYREPL="%PYTHON%" "%BASE_DIR%\data\pyrepl.py"
+set GETDATE="%PYTHON%" "%BASE_DIR%\data\getdate.py"
 
 rem Input Directory
 call :get_temp_working_dir DreamSDK-Offline-Working INPUT_DIR
@@ -281,16 +282,30 @@ echo %3 > %2\OFFLINE
 goto :EOF
 
 :getver
-set tmpgetver=(UNKNOWN)
-set tmpverfile=%1.tmp
-%GIT% -C "%2" describe --always --tags > %tmpverfile%
-if not exist %tmpverfile% goto getverend
 setlocal EnableDelayedExpansion
-set /p tmpgetver=<%tmpverfile%
-set tmpgetver=%tmpgetver%-offline
-del %tmpverfile%
+set _type=%1
+set _dir=%2
+set _getver=(UNKNOWN)
+
+set _verfile="%TEMP%\%_type%.tmp"
+%GIT% -C "%_dir%" describe --always --tags > %_verfile%
+if not exist %_verfile% goto getverend
+set /p _getver=<%_verfile%
+if exist %_verfile% del %_verfile%
+
+set _verfiledomain="%TEMP%\%_type%-domain.tmp"
+%GIT% -C "%_dir%" config --get remote.origin.url > %_verfiledomain%
+if not exist %_verfiledomain% goto getverend
+set /p _getdomain=<%_verfiledomain%
+call :extract_domain_url %_getdomain% _repository_domain
+if exist %_verfiledomain% del %_verfiledomain%
+if not "$%_repository_domain%"=="$" set _repository_domain=%_repository_domain%-
+
+call :today _today
+set _getver=%_repository_domain%%_getver%-%_today%-offline
+
 :getverend
-endlocal & set %1=%tmpgetver%
+endlocal & set "%1=%_getver%"
 goto :EOF
 
 :setver
@@ -461,4 +476,28 @@ for /l %%N in (1 1 8) do (
 )
 set "_name=%TEMP%\%1-%_name%"
 if exist %_name% goto get_temp_working_dir_retry
-endlocal & set "%~2=%_name%" 
+endlocal & set "%~2=%_name%"
+goto :EOF
+
+:today
+rem Thanks Joey: http://stackoverflow.com/a/10945887/1810071
+setlocal EnableDelayedExpansion
+set _getdatefile="%TEMP%\~getdate.tmp"
+%GETDATE% > %_getdatefile%
+set /p _today=<%_getdatefile%
+if exist %_getdatefile% del %_getdatefile%
+endlocal & set "%~1=%_today%"
+goto :EOF
+
+:extract_domain_url
+setlocal EnableDelayedExpansion
+set _url=%1
+if "$%2"=="$" goto :EOF
+for /f "tokens=2 delims=/" %%a in ("%_url%") do (
+	set _subdomain_with_tld=%%a
+)
+for /f "tokens=1 delims=." %%b in ("%_subdomain_with_tld%") do (
+	set _subdomain=%%b
+)
+endlocal & set "%~2=%_subdomain%"
+goto :EOF
