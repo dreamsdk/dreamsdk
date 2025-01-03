@@ -288,7 +288,7 @@ set _dir=%2
 set _getver=(UNKNOWN)
 
 set _verfile="%TEMP%\%_type%.tmp"
-%GIT% -C "%_dir%" describe --always --tags > %_verfile%
+%GIT% -C "%_dir%" describe --always > %_verfile%
 if not exist %_verfile% goto getverend
 set /p _getver=<%_verfile%
 if exist %_verfile% del %_verfile%
