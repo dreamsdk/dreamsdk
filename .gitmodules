@@ -16,9 +16,6 @@
 [submodule "modules/runner"]
 	path = modules/runner
 	url = https://github.com/dreamsdk/shell-runner
-[submodule "setup/packages"]
-	path = setup/packages
-	url = https://github.com/dreamsdk/setup-packages
 [submodule "setup/helpers"]
 	path = setup/helpers
 	url = https://github.com/dreamsdk/setup-helpers
