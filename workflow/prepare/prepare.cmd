@@ -130,10 +130,12 @@ call :log Checking embedded source packages...
 if not exist "%OUTPUT_DIR%\source-packages" goto err_offline
 
 :system_objects
-call :log Generating system objects...
+call :log Generating objects...
 
-call :copy "%SYSTEM_OBJECTS_INPUT_DIR%\mingw" "%OUTPUT_DIR%\system-objects"
-set SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR=%OUTPUT_DIR%\system-objects-configuration
+call :copy "%SYSTEM_OBJECTS_INPUT_DIR%\files\mingw" "%OUTPUT_DIR%\msys-system-objects"
+call :copy "%SYSTEM_OBJECTS_INPUT_DIR%\files\mingw64" "%OUTPUT_DIR%\msys2-system-objects"
+call :copy "%SYSTEM_OBJECTS_INPUT_DIR%\files\common" "%OUTPUT_DIR%\dreamsdk-objects"
+set SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR=%OUTPUT_DIR%\msys-system-objects-configuration
 if not exist %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%
 
 :setup_helpers
@@ -145,6 +147,9 @@ call :copybinary FUNC_RESULT cbhelper %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_O
 if "+%FUNC_RESULT%"=="+0" goto end
 
 call :copybinary FUNC_RESULT pecheck %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :copybinary FUNC_RESULT renbckp %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
 call :copybinary FUNC_RESULT whereis %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
@@ -212,20 +217,23 @@ set PROCESSPKG_TOOLCHAIN_OPTIONAL=3
 
 call :log Processing MinGW foundation base package ...
 call :processpkg %PROCESSPKG_UNPACK% mingw-base %MINGW_BASE_VERSION%
+call :processpkg %PROCESSPKG_UNPACK% mingw64-base %MINGW64_BASE_VERSION%
 
 call :log Processing MSYS packages ...
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% bash %MSYS_BASE_BASH_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% cdrtools %MSYS_BASE_CDRTOOLS_VERSION% msys-base
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% curl %MSYS_BASE_CURL_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% dirhash %MSYS_BASE_DIRHASH_VERSION% msys-base
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% gawk %MSYS_BASE_GAWK_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% img4dc %MSYS_BASE_IMG4DC_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libelf %MSYS_BASE_LIBELF_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libjpeg %MSYS_BASE_LIBJPEG_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libpng %MSYS_BASE_LIBPNG_VERSION% msys-base
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% mintty %MSYS_BASE_MINTTY_VERSION% msys-base
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% msys-core-extended %MSYS_BASE_CORE_EXTENDED_VERSION% msys-base
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% wget %MSYS_BASE_WGET_VERSION% msys-base
+
+call :log Processing utilities ...
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% cdrtools %UTILITIES_CDRTOOLS_VERSION% utilities
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% dirhash %UTILITIES_DIRHASH_VERSION% utilities
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% img4dc %UTILITIES_IMG4DC_VERSION% utilities
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libelf %UTILITIES_LIBELF_VERSION% utilities
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libjpeg %UTILITIES_LIBJPEG_VERSION% utilities
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libpng %UTILITIES_LIBPNG_VERSION% utilities
 
 call :log Processing toolchains ...
 call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_STABLE_ARM_EABI_VERSION% stable toolchain arm-eabi
@@ -427,7 +435,7 @@ rem Apply the correct flag configuration depending on behaviour
 if "+%_behaviour%"=="+%PROCESSPKG_UNPACK%" (
   set _unpack_required=1
 )
-if "+%_behaviour%"=="+%PROCESSPKG_UNPACK_EXTRACT_TO_PARENT%" (  
+if "+%_behaviour%"=="+%PROCESSPKG_UNPACK_EXTRACT_TO_PARENT%" (
   set _unpack_required=1
   set _pkgextract_to_parent=1
 )
@@ -489,6 +497,12 @@ if "+%_behaviour%"=="+%PROCESSPKG_TOOLCHAIN_OPTIONAL%" (
 )
 if "+%_behaviour%"=="+%PROCESSPKG_TOOLCHAIN%" (
   set _stampfilepath=%_output%\%_pkgname%-%_pkgvariant%-bin.stamp
+)
+if "+%_behaviour%"=="+%PROCESSPKG_UNPACK_EXTRACT_TO_PARENT%" (
+  set _pkgdisplayname=%_pkgname%
+)
+if "+%_behaviour%"=="+%PROCESSPKG_UNPACK%" (
+  set _pkgdisplayname=%_pkgname%
 )
 rem Debug: Display variables for targets
 if "+%DEBUG_MODE%"=="+1" (
