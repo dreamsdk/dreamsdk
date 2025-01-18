@@ -573,7 +573,7 @@ goto copybinaryexit
 copy /B %_binary% %_target% >> %LOG_FILE% 2>&1
 :copybinarycheck
 set _mode=
-set _tmpfile=%_name%.tmp
+set _tmpfile="%TEMP%\%_name%.tmp"
 %RELMODE% %_binary% > %_tmpfile%
 if exist "%_tmpfile%" (
   set /p _mode=<%_tmpfile%
@@ -608,7 +608,7 @@ set _python_exec=%PYTHON%
 set _python_installed=0
 set _python_version_major=
 set _python_version=
-set _python_buffer_temp=pythonver.tmp
+set _python_buffer_temp="%TEMP%\pythonver.tmp"
 if exist %_python_exec% goto get_version_python_check
 call :check_command %_python_exec% _python_installed
 if "%_python_installed%"=="0" goto get_version_python_exit
