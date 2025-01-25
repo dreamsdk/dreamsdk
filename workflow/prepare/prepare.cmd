@@ -36,6 +36,7 @@ for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
 
 rem Utilities
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
+if not exist %PATCH% set PATCH="%DREAMSDK_HOME%\usr\bin\patch.exe"
 set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
 set DUALSIGN="%SETUP_HELPERS_INPUT_DIR%\dualsign\dualsign.cmd"
 
@@ -222,18 +223,19 @@ call :processpkg %PROCESSPKG_UNPACK% mingw64-base %MINGW64_BASE_VERSION%
 call :log Processing MSYS packages ...
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% bash %MSYS_BASE_BASH_VERSION% msys-base
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% curl %MSYS_BASE_CURL_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% dirhash %MSYS_BASE_DIRHASH_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% dirhash %MSYS2_BASE_DIRHASH_VERSION% msys2-base
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% gawk %MSYS_BASE_GAWK_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libelf %MSYS_BASE_LIBELF_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libjpeg %MSYS_BASE_LIBJPEG_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libpng %MSYS_BASE_LIBPNG_VERSION% msys-base
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% mintty %MSYS_BASE_MINTTY_VERSION% msys-base
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% msys-core-extended %MSYS_BASE_CORE_EXTENDED_VERSION% msys-base
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% wget %MSYS_BASE_WGET_VERSION% msys-base
 
 call :log Processing utilities ...
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% cdrtools %UTILITIES_CDRTOOLS_VERSION% utilities
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% dirhash %UTILITIES_DIRHASH_VERSION% utilities
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% img4dc %UTILITIES_IMG4DC_VERSION% utilities
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libelf %UTILITIES_LIBELF_VERSION% utilities
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libjpeg %UTILITIES_LIBJPEG_VERSION% utilities
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libpng %UTILITIES_LIBPNG_VERSION% utilities
 
 call :log Processing toolchains ...
 call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_STABLE_ARM_EABI_VERSION% stable toolchain arm-eabi
