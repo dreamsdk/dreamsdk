@@ -30,7 +30,9 @@ for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
 
 rem Utilities
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
+if not exist %PATCH% set PATCH="%DREAMSDK_HOME%\usr\bin\patch.exe"
 set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
+if not exist %RUNNER% set RUNNER="%DREAMSDK_HOME%\opt\dreamsdk\dreamsdk-runner.exe"
 set PYREPL="%PYTHON%" "%BASE_DIR%\data\pyrepl.py"
 set GETDATE="%PYTHON%" "%BASE_DIR%\data\getdate.py"
 
