@@ -38,7 +38,7 @@ rem Utilities
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 if not exist %PATCH% set PATCH="%DREAMSDK_HOME%\usr\bin\patch.exe"
 set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
-set DUALSIGN="%SETUP_HELPERS_INPUT_DIR%\dualsign\dualsign.cmd"
+set DUALSIGN="%SETUP_OUTPUT_DIR%\tools\dualsign\dualsign.cmd"
 
 rem Input directories
 call :normalizepath CODEBLOCKS_PATCHER_INPUT_DIR
@@ -144,19 +144,7 @@ call :log Copying Setup Helpers...
 set SETUP_HELPERS_OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.helpers
 if not exist %SETUP_HELPERS_OUTPUT_DIR% mkdir %SETUP_HELPERS_OUTPUT_DIR%
 
-call :copybinary FUNC_RESULT cbhelper %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
-if "+%FUNC_RESULT%"=="+0" goto end
-
-call :copybinary FUNC_RESULT pecheck %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
-if "+%FUNC_RESULT%"=="+0" goto end
-
-call :copybinary FUNC_RESULT renbckp %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
-if "+%FUNC_RESULT%"=="+0" goto end
-
-call :copybinary FUNC_RESULT whereis %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
-if "+%FUNC_RESULT%"=="+0" goto end
-
-call :copybinary FUNC_RESULT wtcheck %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
+call :copybinary FUNC_RESULT dreamsdk %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_helpers
@@ -240,10 +228,10 @@ call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% img4dc %UTILITIES_IMG4DC_
 call :log Processing toolchains ...
 call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_STABLE_ARM_EABI_VERSION% stable toolchain arm-eabi
 call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_STABLE_SH_ELF_VERSION% stable toolchain sh-elf
-call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_LEGACY_ARM_EABI_VERSION% legacy toolchain arm-eabi
-call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_LEGACY_SH_ELF_VERSION% legacy toolchain sh-elf
-call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_OLDSTABLE_ARM_EABI_VERSION% oldstable toolchain arm-eabi
-call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_OLDSTABLE_SH_ELF_VERSION% oldstable toolchain sh-elf
+call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_1420_ARM_EABI_VERSION% 1420 toolchain arm-eabi
+call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_1420_SH_ELF_VERSION% 1420 toolchain sh-elf
+call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_950WINXP_ARM_EABI_VERSION% 950winxp toolchain arm-eabi
+call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_950WINXP_SH_ELF_VERSION% 950winxp toolchain sh-elf
 
 call :log Processing GNU Debugger (GDB) ...
 call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% no-python
@@ -553,11 +541,13 @@ set _src=%3
 set _target=%4
 set _upx_optional_switches=%5
 call :log * Building Project: %_name% ...
+rem Assume that we will build an EXE file...
+set _fname=%_name%.exe 
 set _project=%_src%\%_name%\src\%_name%.lpi
-set _binary=%_src%\%_name%\bin\%_name%.exe
+set _binary=%_src%\%_name%\bin\%_fname%
 if not exist "%_project%" (
-  set _project=%_src%\src\%_name%.lpi
-  set _binary=%_src%\bin\%_name%.exe
+  set _project=%_src%\src\%_name%.lpi  
+  set _binary=%_src%\bin\%_fname%
 )
 if not exist "%_project%" (
   call :err Missing Project: "%_name%".
@@ -566,11 +556,23 @@ if not exist "%_project%" (
 )
 set LAZDEBUG=
 if "+%DEBUG_MODE%"=="+1" set LAZDEBUG=--verbose
-%LAZBUILD% %_project% --build-mode="Release" %LAZDEBUG% >> %LOG_FILE% 2>&1
-if "$!errorlevel!"=="$0" goto copybinarybuild
+rem set LAZCPU=x86_64
+set LAZCPU=i386
+%LAZBUILD% %_project% --build-mode="Release" --cpu=%LAZCPU% %LAZDEBUG% >> %LOG_FILE% 2>&1
+if "$!errorlevel!"=="$0" goto checkbuildoutput
 call :err Failing Building Project: "%_name%".
 set _result=0
 goto copybinaryexit
+:checkbuildoutput
+rem Check if a DLL file has been generated (instead of a EXE file...)
+if exist %_src%\%_name%\bin\%_name%.dll (
+  set _fname=%_name%.dll
+  set _binary=%_src%\%_name%\bin\!_fname!
+)
+if exist %_src%\bin\%_name%.dll (
+  set _fname=%_name%.dll
+  set _binary=%_src%\bin\!_fname!
+)
 :copybinarybuild
 copy /B %_binary% %_target% >> %LOG_FILE% 2>&1
 :copybinarycheck
@@ -588,9 +590,9 @@ goto copybinarycompress
 :copybinarycheckdebug
 call :warn %_name% is compiled in DEBUG mode...
 :copybinarycompress
-%UPX32% -9 %_upx_optional_switches% %_target%\%_name%.exe >> %LOG_FILE% 2>&1
+%UPX32% -9 %_upx_optional_switches% %_target%\%_fname% >> %LOG_FILE% 2>&1
 if "%SIGN_BINARIES%+"=="1+" (
-    call %DUALSIGN% %_target%\%_name%.exe >> %LOG_FILE% 2>&1
+    call %DUALSIGN% %_target%\%_fname% >> %LOG_FILE% 2>&1
     if "$!errorlevel!"=="$0" goto copybinaryexit
     call :err Failing Signing Project: "%_name%".
     set _result=0
