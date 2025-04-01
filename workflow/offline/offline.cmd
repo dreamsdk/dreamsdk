@@ -60,19 +60,6 @@ set DCLOAD_IP_OUTPUT_DIR=%DCLOAD_OUTPUT_DIR%\dcload-ip
 set DCLOAD_SER_INPUT_DIR=%DCLOAD_INPUT_DIR%\dcload-serial
 set DCLOAD_SER_OUTPUT_DIR=%DCLOAD_OUTPUT_DIR%\dcload-serial
 
-rem Ruby Directories
-set RUBY_INPUT_DIR=%INPUT_DIR%\ruby
-set RUBY_OUTPUT_DIR=%OUTPUT_DIR%\lib-embedded\ruby
-
-set RUBY_MRUBY_INPUT_DIR=%RUBY_INPUT_DIR%\mruby
-set RUBY_MRUBY_OUTPUT_DIR=%RUBY_OUTPUT_DIR%\mruby
-set RUBY_SAMPLES_INPUT_DIR=%RUBY_INPUT_DIR%\samples
-set RUBY_SAMPLES_OUTPUT_DIR=%RUBY_OUTPUT_DIR%\samples
-set RUBY_DREAMPRESENT_INPUT_DIR=%RUBY_SAMPLES_INPUT_DIR%\dreampresent
-set RUBY_DREAMPRESENT_OUTPUT_DIR=%RUBY_SAMPLES_OUTPUT_DIR%\dreampresent
-set RUBY_MRBTRIS_INPUT_DIR=%RUBY_SAMPLES_INPUT_DIR%\mrbtris
-set RUBY_MRBTRIS_OUTPUT_DIR=%RUBY_SAMPLES_OUTPUT_DIR%\mrbtris
-
 rem Source Packages Directory
 set SOURCE_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\source-packages
 
@@ -80,8 +67,6 @@ rem Create missing Input directories
 if not exist %INPUT_DIR% mkdir %INPUT_DIR%
 if not exist %LIB_INPUT_DIR% mkdir %LIB_INPUT_DIR%
 if not exist %DCLOAD_INPUT_DIR% mkdir %DCLOAD_INPUT_DIR%
-if not exist %RUBY_INPUT_DIR% mkdir %RUBY_INPUT_DIR%
-if not exist %RUBY_SAMPLES_INPUT_DIR% mkdir %RUBY_SAMPLES_INPUT_DIR%
 
 :check_git
 set GIT_VERSION=
@@ -173,38 +158,6 @@ call :log * Version: %VERSION_DCLOAD_SERIAL%
 call :remove_dir_tree %DCLOAD_SER_OUTPUT_DIR%
 call :copy %DCLOAD_SER_INPUT_DIR% %DCLOAD_SER_OUTPUT_DIR% %VERSION_DCLOAD_SERIAL%
 call :packsrc dcload-serial %DCLOAD_SER_OUTPUT_DIR%
-goto ruby
-
-rem Ruby: mruby
-:ruby
-call :log Processing: Ruby
-call :git %RUBY_INPUT_DIR% mruby %RUBY_URL%
-call :getver VERSION_RUBY %RUBY_MRUBY_INPUT_DIR%
-call :log * Version: %VERSION_RUBY%
-call :remove_dir_tree %RUBY_OUTPUT_DIR%
-call :copy %RUBY_MRUBY_INPUT_DIR% %RUBY_MRUBY_OUTPUT_DIR% %VERSION_RUBY%
-call :packsrc ruby %RUBY_MRUBY_OUTPUT_DIR%
-
-rem Ruby: dreampresent
-:ruby_dreampresent
-call :log Processing: Ruby Sample: DreamPresent
-call :git %RUBY_SAMPLES_INPUT_DIR% dreampresent %RUBY_SAMPLE_DREAMPRESENT_URL%
-call :getver VERSION_DREAMPRESENT %RUBY_DREAMPRESENT_INPUT_DIR%
-call :log * Version: %VERSION_DREAMPRESENT%
-call :remove_dir_tree %RUBY_DREAMPRESENT_OUTPUT_DIR%
-call :copy %RUBY_DREAMPRESENT_INPUT_DIR% %RUBY_DREAMPRESENT_OUTPUT_DIR% %VERSION_DREAMPRESENT%
-
-rem Ruby: mrbtris
-:ruby_mrbtris
-call :log Processing: Ruby Sample: Mrbtris
-call :git %RUBY_SAMPLES_INPUT_DIR% mrbtris %RUBY_SAMPLE_MRBTRIS_URL%
-call :getver VERSION_MRBTRIS %RUBY_MRBTRIS_INPUT_DIR%
-call :log * Version: %VERSION_MRBTRIS%
-call :remove_dir_tree %RUBY_MRBTRIS_OUTPUT_DIR%
-call :copy %RUBY_MRBTRIS_INPUT_DIR% %RUBY_MRBTRIS_OUTPUT_DIR% %VERSION_MRBTRIS%
-
-:ruby_compress_samples
-call :packsrc ruby-samples %RUBY_SAMPLES_OUTPUT_DIR%
 
 :finish
 call :log
