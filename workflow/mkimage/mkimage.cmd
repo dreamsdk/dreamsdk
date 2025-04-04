@@ -34,11 +34,14 @@ set SETUP_SOURCE_DIR=%SETUP_INPUT_DIR%\bin
 
 rem Utilities
 set MKISOFS="%DREAMSDK_HOME%\msys\1.0\bin\mkisofs.exe"
+if not exist %MKISOFS% set MKISOFS="%DREAMSDK_HOME%\usr\bin\mkisofs.exe"
 set CDI4DC="%DREAMSDK_HOME%\msys\1.0\bin\cdi4dc.exe"
+if not exist %CDI4DC% set CDI4DC="%DREAMSDK_HOME%\usr\bin\cdi4dc.exe"
 set GETVER="%PYTHON%" "%BASE_DIR%\data\getver.py" "%SETUP_SOURCE_DIR%\setup.exe"
 set UPPER="%PYTHON%" "%BASE_DIR%\data\upper.py"
 set GENSORT="%PYTHON%" "%BASE_DIR%\data\gensort.py"
 set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
+if not exist %RUNNER% set RUNNER="%DREAMSDK_HOME%\opt\dreamsdk\dreamsdk-runner.exe"
 
 :check_input
 rem Input Directory
@@ -122,7 +125,7 @@ if exist %SETUP_OUTPUT_ISO_PATH% goto err_generated_iso
 call :generate_autorun_inf "%APPID%"
 
 :adding_extra_files
-set DREAMSDK_INPUT_DIR=%SYSTEM_OBJECTS_INPUT_DIR%\mingw\msys\1.0\opt\dreamsdk
+set DREAMSDK_INPUT_DIR=%SYSTEM_OBJECTS_INPUT_DIR%\common\opt\dreamsdk
 copy /B %DREAMSDK_INPUT_DIR%\getstart.rtf %IMAGE_OUTPUT_DIR%\readme.rtf >> %LOG_FILE% 2>&1
 copy /B %DREAMSDK_INPUT_DIR%\LICENSE %IMAGE_OUTPUT_DIR%\license.txt >> %LOG_FILE% 2>&1
 copy /B %DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm %IMAGE_OUTPUT_DIR%\dreamsdk.chm >> %LOG_FILE% 2>&1
