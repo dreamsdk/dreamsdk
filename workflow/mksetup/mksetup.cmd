@@ -46,6 +46,11 @@ if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 call :checkfile FUNC_RESULT %ISCC%
 if "+%FUNC_RESULT%"=="+0" goto err_binary_iscc
 
+:check_dualsign
+set DUALSIGN_SCRIPT_FILE="%SETUP_INPUT_DIR%\tools\dualsign\dualsign.cmd"
+call :checkfile FUNC_RESULT %DUALSIGN_SCRIPT_FILE%
+if "+%FUNC_RESULT%"=="+0" goto err_script_dualsign
+
 :start
 pushd .
 
@@ -53,7 +58,6 @@ pushd .
 rem Generate Setup program
 call :log Generating DreamSDK Setup...
 set SETUP_SCRIPT_FILE="%SETUP_INPUT_DIR%\src\dreamsdk.iss"
-set DUALSIGN_SCRIPT_FILE="%SETUP_HELPERS_INPUT_DIR%\dualsign\dualsign.cmd"
 %ISCC% %SETUP_SCRIPT_FILE% "/SSignTool=%DUALSIGN_SCRIPT_FILE% $p" >> %LOG_FILE% 2>&1
 
 :check_output_file
@@ -87,6 +91,11 @@ goto end
 :err_binary_iscc
 call :err Inno Setup Compiler was not found.
 call :log File: "%ISCC%"
+goto end
+
+:err_script_dualsign
+call :err DualSign script was not found.
+call :log File: "%DUALSIGN_SCRIPT_FILE%"
 goto end
 
 :err_output_generation
