@@ -39,6 +39,12 @@ set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 if not exist %PATCH% set PATCH="%DREAMSDK_HOME%\usr\bin\patch.exe"
 set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
 set DUALSIGN="%SETUP_OUTPUT_DIR%\tools\dualsign\dualsign.cmd"
+set WGET="%DREAMSDK_HOME%\msys\1.0\bin\wget.exe"
+if not exist %WGET% set WGET="%DREAMSDK_HOME%\usr\bin\wget.exe"
+
+call :create_paths
+pause
+exit 1
 
 rem Input directories
 call :normalizepath CODEBLOCKS_PATCHER_INPUT_DIR
@@ -674,3 +680,33 @@ if "$%_fileexist%"=="$0" (
 :checkfile_exit
 endlocal & set "%~1=%_fileexist%"
 goto :EOF
+
+:create_paths
+echo on
+setlocal EnableDelayedExpansion
+%WGET% -q https://sizious.emunova.net/dreamsdk/packages/directories.txt
+set _fileslist=directories.txt
+set _basedir=%BASE_DIR%\cache
+if not exist "%_basedir%" (
+  mkdir "%_basedir%" 2>nul || (
+    call :err Unable to create base directory.
+    call :log Directory: "%_basedir%"
+    goto :eof
+  )
+)
+for /f "usebackq tokens=* delims=" %%a in ("%_fileslist%") do (
+  set "line=%%a"
+  if not "!line:~0,1!"=="#" (
+    set "target_dir=%_basedir%\!line!"
+	echo 
+    if not exist "!target_dir!" (
+      mkdir "!target_dir!"
+      if !errorlevel! neq 0 (
+        call :err Unable to create directory.
+        call :log Directory: "!target_dir!"      
+      )
+    )
+  )
+)
+endlocal
+goto :eof
