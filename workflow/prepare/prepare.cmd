@@ -9,6 +9,7 @@ set DEBUG_MODE=0
 rem Initialization
 set BASE_DIR=%~dp0
 set BASE_DIR=%BASE_DIR:~0,-1%
+set SETUP_PACKAGES_INPUT_DIR=%BASE_DIR%\pkgcache
 
 set LOG_FILE=%BASE_DIR%\prepare.log
 if exist %LOG_FILE% del %LOG_FILE%
@@ -42,10 +43,6 @@ set DUALSIGN="%SETUP_OUTPUT_DIR%\tools\dualsign\dualsign.cmd"
 set WGET="%DREAMSDK_HOME%\msys\1.0\bin\wget.exe"
 if not exist %WGET% set WGET="%DREAMSDK_HOME%\usr\bin\wget.exe"
 
-call :create_paths
-pause
-exit 1
-
 rem Input directories
 call :normalizepath CODEBLOCKS_PATCHER_INPUT_DIR
 call :checkdir FUNC_RESULT %CODEBLOCKS_PATCHER_INPUT_DIR%
@@ -65,10 +62,6 @@ if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
 call :normalizepath RUNNER_INPUT_DIR
 call :checkdir FUNC_RESULT %RUNNER_INPUT_DIR%
-if "+%FUNC_RESULT%"=="+0" goto err_input_dir
-
-call :normalizepath SETUP_PACKAGES_INPUT_DIR
-call :checkdir FUNC_RESULT %SETUP_PACKAGES_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
 call :normalizepath SHELL_INPUT_DIR
@@ -207,6 +200,9 @@ copy /B %HELP_INPUT_FILE% %BIN_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 
 :processing
 call :log Processing packages ...
+
+rem Downloading all packages in a local cache
+call :buildpkgcache
 
 set PROCESSPKG_UNPACK=0
 set PROCESSPKG_UNPACK_EXTRACT_TO_PARENT=1
@@ -681,32 +677,84 @@ if "$%_fileexist%"=="$0" (
 endlocal & set "%~1=%_fileexist%"
 goto :EOF
 
-:create_paths
-echo on
+:buildpkgcache
 setlocal EnableDelayedExpansion
-%WGET% -q https://sizious.emunova.net/dreamsdk/packages/directories.txt
-set _fileslist=directories.txt
-set _basedir=%BASE_DIR%\cache
+:buildpkgcache_setvars
+set _basedir=%SETUP_PACKAGES_INPUT_DIR%
+set _dircachefn=directories.txt
+set _pkglistfn=packages.txt
+set _pkgcacheurl=%PACKAGES_CACHE_URL%
+if not "%_pkgcacheurl:~-1%"=="/" set "_pkgcacheurl=%PACKAGES_CACHE_URL%/"
+set _pkgdirsurl=%_pkgcacheurl%%_dircachefn%
+set _pkglisturl=%_pkgcacheurl%%_pkglistfn%
+set _dircachepath=%_basedir%\%_dircachefn%
+set _pkglistpath=%_basedir%\%_pkglistfn%
+:buildpkgcache_init
 if not exist "%_basedir%" (
   mkdir "%_basedir%" 2>nul || (
-    call :err Unable to create base directory.
-    call :log Directory: "%_basedir%"
+    call :err * Packages Cache: Unable to create packages cache directory.
+    call :log * Directory: "%_basedir%"
     goto :eof
   )
 )
-for /f "usebackq tokens=* delims=" %%a in ("%_fileslist%") do (
+:buildpkgcache_download
+if exist %_dircachepath% del %_dircachepath%
+%WGET% -q -O "%_dircachepath%" "%_pkgdirsurl%"
+if not exist "%_dircachepath%" (
+  call :err * Packages Cache: Unable to download directories list.
+  call :log * URL: "%_pkgdirsurl%"
+  call :log * Destination: "%_dircachepath%"
+  goto buildpkgcache_exit
+)
+:buildpkgcache_mkdirs
+for /f "usebackq tokens=* delims=" %%a in ("%_dircachepath%") do (
   set "line=%%a"
   if not "!line:~0,1!"=="#" (
-    set "target_dir=%_basedir%\!line!"
-	echo 
+    set "target_dir=%_basedir%\!line!"  
     if not exist "!target_dir!" (
       mkdir "!target_dir!"
       if !errorlevel! neq 0 (
-        call :err Unable to create directory.
-        call :log Directory: "!target_dir!"      
+        call :err * Packages Cache: Unable to create directory.
+        call :log * Directory: "!target_dir!"
+        goto buildpkgcache_exit		
       )
     )
   )
 )
+:buildpkgcache_dlpackages
+if exist %_pkglistpath% del %_pkglistpath%
+%WGET% -q -O "%_pkglistpath%" "%_pkglisturl%"
+if not exist "%_pkglistpath%" (
+  call :err Packages Cache: Unable to download packages list.
+  goto buildpkgcache_exit
+)
+for /f "usebackq tokens=* delims=" %%a in ("%_pkglistpath%") do (
+  set "line=%%a"
+  if not "!line!"=="" if not "!line:~0,1!"=="#" (   
+    rem Extract relative path by removing base URL
+    set "pkg_url=!line!"
+    set "rel_path=!pkg_url:%PACKAGES_CACHE_URL%=!"
+    if "!rel_path:~0,1!"=="/" set "rel_path=!rel_path:~1!"
+    set "rel_path=!rel_path:/=\!"  
+    rem Determine destination path
+    set "dest_path=%_basedir%\!rel_path!"    
+    rem Create parent directory if needed
+    for %%i in ("!dest_path!") do set "dest_dir=%%~dpi"
+    if not exist "!dest_dir!" mkdir "!dest_dir!" 2>nul   
+    rem Download file only if it doesn't exist
+    if not exist "!dest_path!" (
+      call :log * Downloading: !pkg_url!
+      %WGET% -q -O "!dest_path!" "!pkg_url!"
+      if !errorlevel! neq 0 (
+        call :err Packages Cache: Failed to download package.
+        call :log URL: "!pkg_url!"
+        call :log Destination: "!dest_path!"
+      )
+    )
+  )
+)
+:buildpkgcache_exit
+if exist %_pkglistpath% del %_pkglistpath%
+if exist %_dircachepath% del %_dircachepath%
 endlocal
-goto :eof
+goto :EOF

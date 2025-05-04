@@ -82,3 +82,4 @@ lib/
 .dcload/
 sortfile.str
 dist/
+pkgcache/
