@@ -35,6 +35,9 @@ for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   )
 )
 
+rem Just display the final output directory read from config file...
+call :log Target output directory: "%SETUP_OUTPUT_DIR%"
+
 rem Utilities
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 if not exist %PATCH% set PATCH="%DREAMSDK_HOME%\usr\bin\patch.exe"
