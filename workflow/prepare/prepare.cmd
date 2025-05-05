@@ -85,9 +85,13 @@ set OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.sources
 call :checkdir FUNC_RESULT %OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
-rem Handling directory: dreamsdk-binaries 
+rem Handling directory: dreamsdk-binaries
 set BIN_OUTPUT_DIR=%OUTPUT_DIR%\dreamsdk-binaries
 call :checkdir FUNC_RESULT %BIN_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto err_output_dir
+
+set BIN64_OUTPUT_DIR=%OUTPUT_DIR%\dreamsdk-binaries-x64
+call :checkdir FUNC_RESULT %BIN64_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
 rem Handling directory: binary-packages
@@ -146,10 +150,10 @@ call :log Copying Setup Helpers...
 set SETUP_HELPERS_OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.helpers
 if not exist %SETUP_HELPERS_OUTPUT_DIR% mkdir %SETUP_HELPERS_OUTPUT_DIR%
 
-call :copybinary FUNC_RESULT common %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
+call :copybinary FUNC_RESULT common 32 %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
-call :copybinary FUNC_RESULT cbhelper %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
+call :copybinary FUNC_RESULT cbhelper 32 %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_helpers
@@ -157,22 +161,22 @@ call :log Copying Helpers...
 set HELPERS_OUTPUT_DIR=%BIN_OUTPUT_DIR%\helpers
 if not exist %HELPERS_OUTPUT_DIR% mkdir %HELPERS_OUTPUT_DIR%
 
-call :copybinary FUNC_RESULT fastarp %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+call :copybinary FUNC_RESULT fastarp 32 %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
-call :copybinary FUNC_RESULT fastping %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+call :copybinary FUNC_RESULT fastping 32 %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
-call :copybinary FUNC_RESULT ipreader %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+call :copybinary FUNC_RESULT ipreader 32 %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
-call :copybinary FUNC_RESULT kosports %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+call :copybinary FUNC_RESULT kosports 32 %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
-call :copybinary FUNC_RESULT mkdirln %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+call :copybinary FUNC_RESULT mkdirln 32 %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
-call :copybinary FUNC_RESULT wtconfig %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
+call :copybinary FUNC_RESULT wtconfig 32 %HELPERS_INPUT_DIR% %HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_ide_patchers
@@ -180,19 +184,19 @@ call :log Copying IDE Patchers...
 set CODEBLOCKS_PATCHER_OUTPUT_DIR=%BIN_OUTPUT_DIR%\packages\ide\codeblocks
 if not exist %CODEBLOCKS_PATCHER_OUTPUT_DIR% mkdir %CODEBLOCKS_PATCHER_OUTPUT_DIR%
 
-call :copybinary FUNC_RESULT codeblocks-patcher %CODEBLOCKS_PATCHER_INPUT_DIR% %CODEBLOCKS_PATCHER_OUTPUT_DIR% "--compress-resources=0"
+call :copybinary FUNC_RESULT codeblocks-patcher 32 %CODEBLOCKS_PATCHER_INPUT_DIR% %CODEBLOCKS_PATCHER_OUTPUT_DIR% "--compress-resources=0"
 if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_binaries
 call :log Copying Binaries...
 
-call :copybinary FUNC_RESULT dreamsdk-manager %MANAGER_INPUT_DIR% %BIN_OUTPUT_DIR%
+call :copybinary FUNC_RESULT dreamsdk-manager 32 %MANAGER_INPUT_DIR% %BIN_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
-call :copybinary FUNC_RESULT dreamsdk-shell %SHELL_INPUT_DIR% %BIN_OUTPUT_DIR%
+call :copybinary FUNC_RESULT dreamsdk-shell 32 %SHELL_INPUT_DIR% %BIN_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
-call :copybinary FUNC_RESULT dreamsdk-runner %RUNNER_INPUT_DIR% %BIN_OUTPUT_DIR%
+call :copybinary FUNC_RESULT dreamsdk-runner 32 %RUNNER_INPUT_DIR% %BIN_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_help
@@ -200,6 +204,55 @@ call :log Copying Help...
 set HELP_INPUT_FILE=%DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm
 %HHC% "%DOCUMENTATION_INPUT_DIR%\src\dreamsdk.hhp" >> %LOG_FILE% 2>&1
 copy /B %HELP_INPUT_FILE% %BIN_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+
+:dreamsdk_helpers64
+call :log Copying Helpers (x64)...
+set HELPERS64_OUTPUT_DIR=%BIN64_OUTPUT_DIR%\helpers
+if not exist %HELPERS64_OUTPUT_DIR% mkdir %HELPERS64_OUTPUT_DIR%
+
+call :copybinary FUNC_RESULT fastarp 64 %HELPERS_INPUT_DIR% %HELPERS64_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :copybinary FUNC_RESULT fastping 64 %HELPERS_INPUT_DIR% %HELPERS64_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :copybinary FUNC_RESULT ipreader 64 %HELPERS_INPUT_DIR% %HELPERS64_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :copybinary FUNC_RESULT kosports 64 %HELPERS_INPUT_DIR% %HELPERS64_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :copybinary FUNC_RESULT mkdirln 64 %HELPERS_INPUT_DIR% %HELPERS64_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :copybinary FUNC_RESULT wtconfig 64 %HELPERS_INPUT_DIR% %HELPERS64_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+:dreamsdk_ide_patchers64
+call :log Copying IDE Patchers (x64)...
+set CODEBLOCKS_PATCHER64_OUTPUT_DIR=%BIN64_OUTPUT_DIR%\packages\ide\codeblocks
+if not exist %CODEBLOCKS_PATCHER64_OUTPUT_DIR% mkdir %CODEBLOCKS_PATCHER64_OUTPUT_DIR%
+
+call :copybinary FUNC_RESULT codeblocks-patcher 64 %CODEBLOCKS_PATCHER_INPUT_DIR% %CODEBLOCKS_PATCHER64_OUTPUT_DIR% "--compress-resources=0"
+if "+%FUNC_RESULT%"=="+0" goto end
+
+:dreamsdk_binaries64
+call :log Copying Binaries (x64)...
+
+call :copybinary FUNC_RESULT dreamsdk-manager 64 %MANAGER_INPUT_DIR% %BIN64_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :copybinary FUNC_RESULT dreamsdk-shell 64 %SHELL_INPUT_DIR% %BIN64_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :copybinary FUNC_RESULT dreamsdk-runner 64 %RUNNER_INPUT_DIR% %BIN64_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
+:dreamsdk_help64
+call :log Copying Help (x64)...
+set HELP_INPUT_FILE=%DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm
+%HHC% "%DOCUMENTATION_INPUT_DIR%\src\dreamsdk.hhp" >> %LOG_FILE% 2>&1
+copy /B %HELP_INPUT_FILE% %BIN64_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 
 :processing
 call :log Processing packages ...
@@ -545,9 +598,10 @@ goto :EOF
 setlocal EnableDelayedExpansion
 set _result=1
 set _name=%2
-set _src=%3
-set _target=%4
-set _upx_optional_switches=%5
+set _bit=%3
+set _src=%4
+set _target=%5
+set _upx_optional_switches=%6
 call :log * Building Project: %_name% ...
 rem Assume that we will build an EXE file...
 set _fname=%_name%.exe 
@@ -564,9 +618,13 @@ if not exist "%_project%" (
 )
 set LAZDEBUG=
 if "+%DEBUG_MODE%"=="+1" set LAZDEBUG=--verbose
-rem set LAZCPU=x86_64
 set LAZCPU=i386
-%LAZBUILD% %_project% --build-mode="Release" --cpu=%LAZCPU% %LAZDEBUG% >> %LOG_FILE% 2>&1
+set LAZOS=win32
+if "%_bit%+"=="64+" (
+  set LAZCPU=x86_64
+  set LAZOS=win64
+)
+%LAZBUILD% %_project% --build-mode="Release" --cpu=%LAZCPU% --operating-system=%LAZOS% %LAZDEBUG% >> %LOG_FILE% 2>&1
 if "$!errorlevel!"=="$0" goto checkbuildoutput
 call :err Failing Building Project: "%_name%".
 set _result=0
