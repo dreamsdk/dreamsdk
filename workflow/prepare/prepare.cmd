@@ -24,10 +24,23 @@ set FUNC_RESULT=0
 rem Check if DreamSDK is installed (of course, you can use a previous version!)
 if "$%DREAMSDK_HOME%"=="$" goto err_dreamsdk_missing
 
-rem Read Configuration
-set CONFIG_FILE=%BASE_DIR%\prepare.ini
+rem Read General Configuration
+set "CONFIG_FILE=%BASE_DIR%\prepare.ini"
+if not exist "%CONFIG_FILE%" set "CONFIG_FILE=%BASE_DIR%\prepare.default.ini"
 if not exist "%CONFIG_FILE%" goto err_config
 for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
+  set %%i 2> nul
+  rem Sanitize configuration entry
+  for /f "tokens=1 delims==" %%j in ("%%i") do (
+    call :trim %%j
+  )
+)
+
+rem Read Packages Configuration
+set "PACKAGES_CONFIG_FILE=%BASE_DIR%\packages.ini"
+if not exist "%PACKAGES_CONFIG_FILE%" set "PACKAGES_CONFIG_FILE=%BASE_DIR%\packages.default.ini"
+if not exist "%PACKAGES_CONFIG_FILE%" goto err_config_packages
+for /f "tokens=*" %%i in (%PACKAGES_CONFIG_FILE%) do (
   set %%i 2> nul
   rem Sanitize configuration entry
   for /f "tokens=1 delims==" %%j in ("%%i") do (
@@ -97,6 +110,10 @@ if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 rem Handling directory: binary-packages
 set BIN_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\binary-packages
 call :checkdir FUNC_RESULT %BIN_PACKAGES_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto err_output_dir
+
+set BIN64_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\binary-packages-x64
+call :checkdir FUNC_RESULT %BIN64_PACKAGES_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
 :check_sevenzip
@@ -264,52 +281,33 @@ set PROCESSPKG_UNPACK=0
 set PROCESSPKG_UNPACK_EXTRACT_TO_PARENT=1
 set PROCESSPKG_TOOLCHAIN=2
 set PROCESSPKG_TOOLCHAIN_OPTIONAL=3
+set PROCESSPKG_TOOLCHAIN64=4
+set PROCESSPKG_TOOLCHAIN_OPTIONAL64=5
 
 call :log Processing MinGW foundation base package ...
-call :processpkg %PROCESSPKG_UNPACK% mingw-base %MINGW_BASE_VERSION%
-call :processpkg %PROCESSPKG_UNPACK% mingw64-base %MINGW64_BASE_VERSION%
+rem MinGW x86
+::call :processpkg %PROCESSPKG_UNPACK% mingw-base %MINGW32_BASE_VERSION%
+rem MinGW x64
+::call :processpkg %PROCESSPKG_UNPACK% mingw64-base %MINGW64_BASE_VERSION%
 
 call :log Processing MSYS packages ...
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% bash %MSYS_BASE_BASH_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% curl %MSYS_BASE_CURL_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% dirhash %MSYS_BASE_DIRHASH_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% dirhash %MSYS2_BASE_DIRHASH_VERSION% msys2-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% gawk %MSYS_BASE_GAWK_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libelf %MSYS_BASE_LIBELF_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libjpeg %MSYS_BASE_LIBJPEG_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libpng %MSYS_BASE_LIBPNG_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% mintty %MSYS_BASE_MINTTY_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% msys-core-extended %MSYS_BASE_CORE_EXTENDED_VERSION% msys-base
-call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% wget %MSYS_BASE_WGET_VERSION% msys-base
+rem MSYS x86
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% bash %MSYS32_BASE_BASH_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% curl %MSYS32_BASE_CURL_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% dirhash %MSYS32_BASE_DIRHASH_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% gawk %MSYS32_BASE_GAWK_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libelf %MSYS32_BASE_LIBELF_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libjpeg %MSYS32_BASE_LIBJPEG_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% libpng %MSYS32_BASE_LIBPNG_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% mintty %MSYS32_BASE_MINTTY_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% msys-core-extended %MSYS32_BASE_CORE_EXTENDED_VERSION% msys-base
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% wget %MSYS32_BASE_WGET_VERSION% msys-base
+rem MSYS x64
+call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% dirhash %MSYS64_BASE_DIRHASH_VERSION% msys2-base
 
 call :log Processing utilities ...
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% cdrtools %UTILITIES_CDRTOOLS_VERSION% utilities
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% img4dc %UTILITIES_IMG4DC_VERSION% utilities
-
-call :log Processing toolchains ...
-call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_STABLE_ARM_EABI_VERSION% stable toolchain arm-eabi
-call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_STABLE_SH_ELF_VERSION% stable toolchain sh-elf
-call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_1420_ARM_EABI_VERSION% 1420 toolchain arm-eabi
-call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_1420_SH_ELF_VERSION% 1420 toolchain sh-elf
-call :processpkg %PROCESSPKG_TOOLCHAIN% arm-eabi-toolchain %TOOLCHAIN_950WINXP_ARM_EABI_VERSION% 950winxp toolchain arm-eabi
-call :processpkg %PROCESSPKG_TOOLCHAIN% sh-elf-toolchain %TOOLCHAIN_950WINXP_SH_ELF_VERSION% 950winxp toolchain sh-elf
-
-call :log Processing GNU Debugger (GDB) ...
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% no-python
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-2.7
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.0
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.1
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.2
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.3
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.4
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.5
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.6
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.7
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.8
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.9
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.10
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.11
-call :processpkg %PROCESSPKG_TOOLCHAIN_OPTIONAL% sh-elf-gdb %SH_ELF_GDB_VERSION% python-3.12
 
 call :log Processing addons command-line tools ...
 call :processpkg %PROCESSPKG_UNPACK% elevate %ADDONS_CMD_ELEVATE_VERSION% addons-cmd
@@ -327,6 +325,18 @@ call :processpkg %PROCESSPKG_UNPACK% ipwriter %ADDONS_GUI_IPWRITER_VERSION% addo
 call :processpkg %PROCESSPKG_UNPACK% mrwriter %ADDONS_GUI_MRWRITER_VERSION% addons-gui
 call :processpkg %PROCESSPKG_UNPACK% sbinducr %ADDONS_GUI_SBINDUCR_VERSION% addons-gui
 call :processpkg %PROCESSPKG_UNPACK% vmutool %ADDONS_GUI_VMUTOOL_VERSION% addons-gui
+
+call :log Processing toolchains ...
+call :processtoolchains 32 "%TOOLCHAINS32_VERSIONS%"
+
+call :log Processing toolchains (x64)...
+call :processtoolchains 64 "%TOOLCHAINS64_VERSIONS%"
+
+call :log Processing GDB: GNU Debugger ...
+call :processgdb 32 %GDB32_VERSION%
+
+call :log Processing GDB: GNU Debugger (x64)...
+call :processgdb 64 %GDB64_VERSION%
 
 :profile
 call :log Generating profile file...
@@ -359,6 +369,11 @@ rem ## Errors ##################################################################
 :err_config
 call :err The configuration file was not found.
 call :log File: "%CONFIG_FILE%"
+goto end
+
+:err_config_packages
+call :err The packages file was not found.
+call :log File: "%PACKAGES_CONFIG_FILE%"
 goto end
 
 :err_input_dir
@@ -427,6 +442,18 @@ goto :EOF
 set tempvar=%*
 goto :EOF
 
+:tolower
+setlocal EnableDelayedExpansion
+set "_varname=%~1"
+set "_str=!%_varname%!"
+for /f "delims=" %%a in ('%PYTHON% -c "import sys; print(sys.argv[1].lower())" "!_str!"') do (
+  set "_result=%%a"
+)
+endlocal & (
+  set "%_varname%=%_result%"
+)
+goto :EOF
+
 :copy
 set EXCLUDE_FILE=%BASE_DIR%\exclude.txt
 echo .git\ > %EXCLUDE_FILE%
@@ -478,6 +505,16 @@ set _pkgver=%3
 set _pkgvariant=%4
 set _pkgextra=%5
 set _pkgextra2=%6
+rem Translate x64 values to real process values
+set _pkg64=0
+if "+%_behaviour%"=="+%PROCESSPKG_TOOLCHAIN64%" (
+  set "_behaviour=%PROCESSPKG_TOOLCHAIN%"
+  set "_pkg64=1"
+)
+if "+%_behaviour%"=="+%PROCESSPKG_TOOLCHAIN_OPTIONAL64%" (
+  set "_behaviour=%PROCESSPKG_TOOLCHAIN_OPTIONAL%"
+  set "_pkg64=1"
+)
 rem Set flags to their default values
 set _unpack_required=0
 set _pkgextract_to_parent=0
@@ -505,8 +542,14 @@ if "+%DEBUG_MODE%"=="+1" (
   echo _unpack_required=%_unpack_required%
   echo _pkgextract_to_parent=%_pkgextract_to_parent%
   echo _warn_if_package_not_found=%_warn_if_package_not_found%
+  echo _pkg64=%_pkg64%
 )
+rem Handle x64 variant
+set "_pkgsuffix64="
+if "+%_pkg64%"=="+1" set "_pkgsuffix64=-x64"
 rem Compute input/output variables
+set "_binpackageoutputdir=%BIN_PACKAGES_OUTPUT_DIR%"
+if "+%_pkg64%"=="+1" set "_binpackageoutputdir=%BIN64_PACKAGES_OUTPUT_DIR%"
 set _pkgdisplayname=%_pkgname%
 set _pkgbasefilename=%_pkgname%-bin
 set _pkgtempbase=%_pkgname%
@@ -518,7 +561,7 @@ set _output=%OUTPUT_DIR%\%_pkgtempbase%
 if not "+%_pkgextra%"=="+" (
   set _pkgdisplayname=%_pkgdisplayname%::%_pkgextra%
   set _pkgbasefilename=%_pkgname%-%_pkgextra%-bin
-  set _output=%OUTPUT_DIR%\%_pkgvariant%\%_pkgname%-%_pkgextra%
+  set _output=%OUTPUT_DIR%\%_pkgvariant%%_pkgsuffix64%\%_pkgname%-%_pkgextra%
 )
 set _input=%SETUP_PACKAGES_INPUT_DIR%\%_pkgtempbase%\%_pkgver%\%_pkgbasefilename%.7z
 if not exist %_input% (
@@ -529,13 +572,13 @@ if not exist %_input% (
   set _pkgdisplayname=%_pkgname%-%_pkgvariant%
   set _pkgbasefilename=%_pkgname%-%_pkgvariant%-bin
   set _input=%SETUP_PACKAGES_INPUT_DIR%\%_pkgname%\%_pkgver%\!_pkgbasefilename!.7z
-  set _output=%OUTPUT_DIR%\%_pkgname%\%_pkgname%-%_pkgvariant%
+  set _output=%OUTPUT_DIR%\%_pkgname%%_pkgsuffix64%\%_pkgname%-%_pkgvariant%
 )
 if "+%_behaviour%"=="+%PROCESSPKG_TOOLCHAIN%" (
   set _pkgdisplayname=%_pkgname%-%_pkgvariant%
   set _pkgbasefilename=!_pkgname!-bin
   set _input=%SETUP_PACKAGES_INPUT_DIR%\%_pkgname%\%_pkgver%\!_pkgbasefilename!.7z
-  set _output=%OUTPUT_DIR%\%_pkgextra%-%_pkgvariant%\%_pkgextra2%
+  set _output=%OUTPUT_DIR%\%_pkgextra%-%_pkgvariant%%_pkgsuffix64%\%_pkgextra2%
 )
 set _pkginputfilename=%_pkgbasefilename%
 for %%f in ("%_input%") do set _pkginputfilename=%%~nf
@@ -572,7 +615,7 @@ if exist %_input% (
   ) else (
     rem Copy the package to the "binary-packages" directory
     call :log * Copying %_pkgdisplayname% ^(%_pkgver%^) ...
-    copy /B %_input% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1    
+    copy /B %_input% %_binpackageoutputdir% >> %LOG_FILE% 2>&1    
   )
   if not "+%_stampfilepath%"=="+." (
     rem Then generate a stamp file if required    
@@ -580,10 +623,10 @@ if exist %_input% (
     echo. > %_stampfilepath%
   )
   if "+%_behaviour%"=="+%PROCESSPKG_TOOLCHAIN%" (
-    if exist %BIN_PACKAGES_OUTPUT_DIR%\%_pkgname%-%_pkgvariant%-bin.7z (
-      del %BIN_PACKAGES_OUTPUT_DIR%\%_pkgname%-%_pkgvariant%-bin.7z
+    if exist %_binpackageoutputdir%\%_pkgname%-%_pkgvariant%-bin.7z (
+      del %_binpackageoutputdir%\%_pkgname%-%_pkgvariant%-bin.7z
     )
-    ren %BIN_PACKAGES_OUTPUT_DIR%\%_pkgbasefilename%.7z %_pkgname%-%_pkgvariant%-bin.7z
+    ren %_binpackageoutputdir%\%_pkgbasefilename%.7z %_pkgname%-%_pkgvariant%-bin.7z
   )
 )
 if "%_warn_if_package_not_found%"=="0" goto unpack_exit
@@ -817,5 +860,91 @@ for /f "usebackq tokens=* delims=" %%a in ("%_pkglistpath%") do (
 :buildpkgcache_exit
 if exist %_pkglistpath% del %_pkglistpath%
 if exist %_dircachepath% del %_dircachepath%
+endlocal
+goto :EOF
+
+:processtoolchains
+setlocal EnableDelayedExpansion
+set "_toolchain_arch=%~1"
+set "_toolchain_profiles=%~2"
+set "_toolchain_profiles=!_toolchain_profiles:;= !"
+set "_toolchain_processpkg_type=%PROCESSPKG_TOOLCHAIN%"
+if "%_toolchain_arch%"=="64" set "_toolchain_processpkg_type=%PROCESSPKG_TOOLCHAIN64%"
+rem Check if arch is unknown
+if not "%_toolchain_arch%"=="32" if not "%_toolchain_arch%"=="64" (
+  call :err Architecture must be "32" or "64".
+  goto :eof
+)
+rem For all profiles, retrieve the sh-elf and arm-eabi values then call the :processpkg func
+for %%v in (%_toolchain_profiles%) do (
+  rem Local variables for the current iteration
+  set "_current_profile=%%v"  
+  set "_profile_name="
+  set "_armeabi_value="
+  set "_shelf_value="
+  set "_profile_key=%%v"
+  call :tolower _profile_key  
+  rem Extract the values using the keys from the INI file
+  for /f "usebackq tokens=1,2 delims==" %%A in ("%PACKAGES_CONFIG_FILE%") do (
+    set "_key=%%A"
+    set "_value=%%B"
+    rem Trim spaces before and after the key
+    set "_key=!_key: =!"    
+    rem Extract the value from the key if the pattern is found
+    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_!_current_profile!_PACKAGE_ARMEABI" (
+      set "_armeabi_value=!_value!"
+    )
+    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_!_current_profile!_PACKAGE_SHELF" (
+      set "_shelf_value=!_value!"
+    )
+    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_!_current_profile!_NAME" (
+      set "_profile_name=!_value!"
+    )
+  )
+  rem !_profile_name! should be used...
+  rem Execute :processpkg if all the necessary keys were found
+  if defined _armeabi_value (
+    call :processpkg !_toolchain_processpkg_type! arm-eabi-toolchain !_armeabi_value! !_profile_key! toolchain arm-eabi
+  ) else (
+    call :err Toolchains: arm-eabi value not found for !_current_profile!
+  )
+  if defined _shelf_value (
+    call :processpkg !_toolchain_processpkg_type! sh-elf-toolchain !_shelf_value! !_profile_key! toolchain sh-elf
+  ) else (
+    call :err Toolchains: sh-elf value not found for !_current_profile!
+  )
+)
+endlocal
+goto :EOF
+
+:processgdb
+setlocal EnableDelayedExpansion
+set "_gdb_arch=%~1"
+set "_gdb_version=%~2"
+set "_toolchain_processpkg_type=%PROCESSPKG_TOOLCHAIN_OPTIONAL%"
+if "%_gdb_arch%"=="64" set "_toolchain_processpkg_type=%PROCESSPKG_TOOLCHAIN_OPTIONAL64%"
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% no-python
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-2.7
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.0
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.1
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.2
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.3
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.4
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.5
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.6
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.7
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.8
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.9
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.10
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.11
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.12
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.13
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.14
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.15
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.16
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.17
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.18
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.19
+call :processpkg %_toolchain_processpkg_type% sh-elf-gdb %_gdb_version% python-3.20
 endlocal
 goto :EOF
