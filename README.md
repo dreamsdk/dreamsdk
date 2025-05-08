@@ -19,7 +19,7 @@ for interacting with the Sega Dreamcast hardware), the associated/required
 programs made for this package
 (e.g., [DreamSDK Manager](https://github.com/dreamsdk/manager)). DreamSDK is
 compatible with Windows XP and greater (e.g, it has been well tested on Windows
-1).
+11).
 
 🌐 [**Browse the official website here**](https://www.dreamsdk.org/)
 📥 [**Download the official release here**](https://github.com/dreamsdk/dreamsdk/releases)
@@ -185,8 +185,8 @@ do so but sometime, you don't have the choice to be offline. The user can choose
 the offline package directly when installing DreamSDK or later on through
 DreamSDK Manager.
 
-This script is preparing everything for embedding **KallistiOS**, **KOS Ports**,
-**Dreamcast Tool** and **Ruby** libraries directly the DreamSDK Setup package.
+This script is preparing everything for embedding **KallistiOS**, **KOS Ports** and
+**Dreamcast Tool** libraries directly the DreamSDK Setup package.
 
 ### Step 2: Prepare
 
@@ -194,7 +194,7 @@ The `prepare` script is very important as it gather all the components used to
 produces DreamSDK. This script is generating the `.sources` directory that will
 be embedded in the **DreamSDK Setup** package.
 
-...
+In this script, you will have to set the packages version you want to retrieve.
 
 ### Step 3: MkSetup
 
