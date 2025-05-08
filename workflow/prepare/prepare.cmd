@@ -121,7 +121,7 @@ call :checkfile FUNC_RESULT %SEVENZIP%
 if "+%FUNC_RESULT%"=="+0" goto err_binary_sevenzip
 
 :check_upx
-call :checkfile FUNC_RESULT %UPX32%
+call :checkfile FUNC_RESULT %UPX%
 if "+%FUNC_RESULT%"=="+0" goto err_binary_upx
 
 :check_hhc
@@ -286,9 +286,9 @@ set PROCESSPKG_TOOLCHAIN_OPTIONAL64=5
 
 call :log Processing MinGW foundation base package ...
 rem MinGW x86
-::call :processpkg %PROCESSPKG_UNPACK% mingw-base %MINGW32_BASE_VERSION%
+call :processpkg %PROCESSPKG_UNPACK% mingw-base %MINGW32_BASE_VERSION%
 rem MinGW x64
-::call :processpkg %PROCESSPKG_UNPACK% mingw64-base %MINGW64_BASE_VERSION%
+call :processpkg %PROCESSPKG_UNPACK% mingw64-base %MINGW64_BASE_VERSION%
 
 call :log Processing MSYS packages ...
 rem MSYS x86
@@ -401,7 +401,7 @@ goto end
 
 :err_binary_upx
 call :err UPX was not found.
-call :log File: "%UPX32%"
+call :log File: "%UPX%"
 goto end
 
 :err_binary_dualsign
@@ -699,7 +699,7 @@ goto copybinarycompress
 :copybinarycheckdebug
 call :warn %_name% is compiled in DEBUG mode...
 :copybinarycompress
-%UPX32% -9 %_upx_optional_switches% %_target%\%_fname% >> %LOG_FILE% 2>&1
+%UPX% -9 %_upx_optional_switches% %_target%\%_fname% >> %LOG_FILE% 2>&1
 if "%SIGN_BINARIES%+"=="1+" (
     call %DUALSIGN% %_target%\%_fname% >> %LOG_FILE% 2>&1
     if "$!errorlevel!"=="$0" goto copybinaryexit
