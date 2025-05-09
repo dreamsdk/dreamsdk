@@ -55,6 +55,7 @@ rem Utilities
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 if not exist %PATCH% set PATCH="%DREAMSDK_HOME%\usr\bin\patch.exe"
 set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
+set MKCFGGDB="%PYTHON%" "%BASE_DIR%\data\mkcfggdb.py"
 set DUALSIGN="%SETUP_OUTPUT_DIR%\tools\dualsign\dualsign.cmd"
 set WGET="%DREAMSDK_HOME%\msys\1.0\bin\wget.exe"
 if not exist %WGET% set WGET="%DREAMSDK_HOME%\usr\bin\wget.exe"
@@ -114,6 +115,10 @@ if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
 set BIN64_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\binary-packages-x64
 call :checkdir FUNC_RESULT %BIN64_PACKAGES_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto err_output_dir
+
+set SETUP_CONFIG_OUTPUT_DIR=%SETUP_OUTPUT_DIR%\src\cfg
+call :checkdir FUNC_RESULT %SETUP_CONFIG_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
 :check_sevenzip
@@ -337,6 +342,9 @@ call :processgdb 32 %GDB32_VERSION%
 
 call :log Processing GDB: GNU Debugger (x64)...
 call :processgdb 64 %GDB64_VERSION%
+
+call :log Generating GDB Inno Setup configuration file...
+%MKCFGGDB% %SETUP_CONFIG_OUTPUT_DIR% %GDB32_VERSION% %GDB64_VERSION% %BIN_PACKAGES_OUTPUT_DIR% %BIN64_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 
 :profile
 call :log Generating profile file...
@@ -891,13 +899,13 @@ for %%v in (%_toolchain_profiles%) do (
     rem Trim spaces before and after the key
     set "_key=!_key: =!"    
     rem Extract the value from the key if the pattern is found
-    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_!_current_profile!_PACKAGE_ARMEABI" (
+    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_PACKAGE_ARMEABI_!_current_profile!" (
       set "_armeabi_value=!_value!"
     )
-    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_!_current_profile!_PACKAGE_SHELF" (
+    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_PACKAGE_SHELF_!_current_profile!" (
       set "_shelf_value=!_value!"
     )
-    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_!_current_profile!_NAME" (
+    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_NAME_!_current_profile!" (
       set "_profile_name=!_value!"
     )
   )
