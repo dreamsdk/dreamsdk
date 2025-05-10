@@ -134,9 +134,9 @@ def generate_source_directories(packages, arch):
     for pkg_name, pkg_version in packages:
         if pkg_version:
             formatted_version = get_formatted_python_version(pkg_version)
-            content += f'#define SourceDirectoryGdb{arch}Python{formatted_version} Source{arch}DirectoryBase + "\\sh-elf-gdb\\sh-elf-gdb-python-{pkg_version}"\n'
+            content += f'#define SourceDirectoryGdb{arch}Python{formatted_version} SourceDirectoryBase + "\\sh-elf-gdb{"-x64" if bitness == "64" else ""}\\sh-elf-gdb-python-{pkg_version}"\n'
         else:
-            content += f'#define SourceDirectoryGdb{arch} Source{arch}DirectoryBase + "\\sh-elf-gdb\\sh-elf-gdb-no-python"\n'
+            content += f'#define SourceDirectoryGdb{arch} SourceDirectoryBase + "\\sh-elf-gdb{"-x64" if bitness == "64" else ""}\\sh-elf-gdb-no-python"\n'
     
     return content
 
