@@ -322,11 +322,11 @@ def main():
     content = generate_gdb_config(version_32bit, version_64bit, path_32bit, path_64bit)
     
     # Write to output file    
-    full_output_path = os.path.join(path_output, 'gdb.config.iss')
+    full_output_path = os.path.join(path_output, 'gdb.config.out')
     with open(full_output_path, 'w', encoding='utf-8') as f:
         f.write(content)
     
-    print(f"File 'gdb.config.iss' successfully generated!")
+    print(f"GDB configuration file successfully generated")
 
 if __name__ == "__main__":
     main()
