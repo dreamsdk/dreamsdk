@@ -290,12 +290,29 @@ set PROCESSPKG_TOOLCHAIN_OPTIONAL=3
 set PROCESSPKG_TOOLCHAIN64=4
 set PROCESSPKG_TOOLCHAIN_OPTIONAL64=5
 
+:processing_base
 call :log Processing MinGW foundation base package ...
 rem MinGW x86
 call :processpkg %PROCESSPKG_UNPACK% mingw-base %MINGW32_BASE_VERSION%
 rem MinGW x64
 call :processpkg %PROCESSPKG_UNPACK% mingw64-base %MINGW64_BASE_VERSION%
 
+:processing_profile
+call :log * Generating profile file for MinGW ...
+set SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%\etc
+set SYSTEM_OBJECTS_PROFILE_INPUT_FILE=%OUTPUT_DIR%\mingw-base\msys\1.0\etc\profile
+set SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE=%SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%\profile
+if not exist %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%
+if exist %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE% del %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE%
+if not exist %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% (
+    call :err File not found: "%SYSTEM_OBJECTS_PROFILE_INPUT_FILE%"
+    goto end
+)
+move %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+call :patch FUNC_RESULT %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% %SYSTEM_OBJECTS_INPUT_DIR%\patches\etc.diff
+if "+%FUNC_RESULT%"=="+0" goto end
+
+:processing_msys
 call :log Processing MSYS packages ...
 rem MSYS x86
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% bash %MSYS32_BASE_BASH_VERSION% msys-base
@@ -311,10 +328,12 @@ call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% wget %MSYS32_BASE_WGET_VE
 rem MSYS x64
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% dirhash %MSYS64_BASE_DIRHASH_VERSION% msys2-base
 
+:processing_utilities
 call :log Processing utilities ...
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% cdrtools %UTILITIES_CDRTOOLS_VERSION% utilities
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% img4dc %UTILITIES_IMG4DC_VERSION% utilities
 
+:processing_addons
 call :log Processing addons command-line tools ...
 call :processpkg %PROCESSPKG_UNPACK% elevate %ADDONS_CMD_ELEVATE_VERSION% addons-cmd
 call :processpkg %PROCESSPKG_UNPACK% pvr2png %ADDONS_CMD_PVR2PNG_VERSION% addons-cmd
@@ -332,39 +351,28 @@ call :processpkg %PROCESSPKG_UNPACK% mrwriter %ADDONS_GUI_MRWRITER_VERSION% addo
 call :processpkg %PROCESSPKG_UNPACK% sbinducr %ADDONS_GUI_SBINDUCR_VERSION% addons-gui
 call :processpkg %PROCESSPKG_UNPACK% vmutool %ADDONS_GUI_VMUTOOL_VERSION% addons-gui
 
+:processing_toolchains
 call :log Processing toolchains ...
 call :processtoolchains 32 "%TOOLCHAINS32_VERSIONS%"
 
 call :log Processing toolchains (x64)...
 call :processtoolchains 64 "%TOOLCHAINS64_VERSIONS%"
 
+:processing_gdb
 call :log Processing GDB: GNU Debugger ...
 call :processgdb 32 %GDB32_VERSION%
 
 call :log Processing GDB: GNU Debugger (x64)...
 call :processgdb 64 %GDB64_VERSION%
 
-call :log Generating GDB Inno Setup configuration file...
+:processing_inno_setup
+call :log Generating Inno Setup configuration files ...
+
+call :log * Generating GDB configuration file...
 %MKCFGGDB% %SETUP_CONFIG_OUTPUT_DIR% %GDB32_VERSION% %GDB64_VERSION% %BIN_PACKAGES_OUTPUT_DIR% %BIN64_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 
-call :log Generating Toolchains Inno Setup configuration file...
+call :log * Generating toolchains configuration file...
 %MKCFGTOOLCHAINS% %SETUP_CONFIG_OUTPUT_DIR% %PACKAGES_CONFIG_FILE% >> %LOG_FILE% 2>&1
-
-:profile
-call :log Generating profile file...
-set SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%\etc
-set SYSTEM_OBJECTS_PROFILE_INPUT_FILE=%OUTPUT_DIR%\mingw-base\msys\1.0\etc\profile
-set SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE=%SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%\profile
-
-if not exist %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%
-if exist %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE% del %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE%
-if not exist %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% (
-    call :err File not found: "%SYSTEM_OBJECTS_PROFILE_INPUT_FILE%"
-    goto end
-)
-move %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% >> %LOG_FILE% 2>&1
-call :patch FUNC_RESULT %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% %SYSTEM_OBJECTS_INPUT_DIR%\patches\etc.diff
-if "+%FUNC_RESULT%"=="+0" goto end
 
 :finish
 call :log
