@@ -56,6 +56,7 @@ set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 if not exist %PATCH% set PATCH="%DREAMSDK_HOME%\usr\bin\patch.exe"
 set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
 set MKCFGGDB="%PYTHON%" "%BASE_DIR%\data\mkcfggdb.py"
+set MKCFGTOOLCHAINS="%PYTHON%" "%BASE_DIR%\data\mkcfgtoolchains.py"
 set DUALSIGN="%SETUP_OUTPUT_DIR%\tools\dualsign\dualsign.cmd"
 set WGET="%DREAMSDK_HOME%\msys\1.0\bin\wget.exe"
 if not exist %WGET% set WGET="%DREAMSDK_HOME%\usr\bin\wget.exe"
@@ -345,6 +346,9 @@ call :processgdb 64 %GDB64_VERSION%
 
 call :log Generating GDB Inno Setup configuration file...
 %MKCFGGDB% %SETUP_CONFIG_OUTPUT_DIR% %GDB32_VERSION% %GDB64_VERSION% %BIN_PACKAGES_OUTPUT_DIR% %BIN64_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+
+call :log Generating Toolchains Inno Setup configuration file...
+%MKCFGTOOLCHAINS% %SETUP_CONFIG_OUTPUT_DIR% %PACKAGES_CONFIG_FILE% >> %LOG_FILE% 2>&1
 
 :profile
 call :log Generating profile file...

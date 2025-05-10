@@ -326,7 +326,7 @@ def main():
     with open(full_output_path, 'w', encoding='utf-8') as f:
         f.write(content)
     
-    print(f"GDB configuration file successfully generated")
+    print(f"GDB configuration file successfully generated at: {full_output_path}")
 
 if __name__ == "__main__":
     main()

@@ -317,12 +317,12 @@ def main():
     Main function that processes command line arguments and generates the file.
     """
     if len(sys.argv) != 3:
-        print("Usage: python mkcfgtoolchains.py <config_ini_path> <output_path>")
-        print("Example: python mkcfgtoolchains.py packages.default.ini /path/to/output")
+        print("Usage: python mkcfgtoolchains.py <output_path> <config_ini_path>")
+        print("Example: python mkcfgtoolchains.py /path/to/output packages.default.ini")
         sys.exit(1)
 
-    config_path = sys.argv[1]
-    output_path = sys.argv[2]
+    output_path = sys.argv[1]
+    config_path = sys.argv[2]
     
     if not os.path.exists(config_path):
         print(f"Error: Configuration file {config_path} does not exist")
