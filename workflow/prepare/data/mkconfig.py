@@ -313,74 +313,104 @@ def match_toolchain_checksums_and_versions(toolchain_profiles: Dict, scanned_pac
     for profile_id, profile_info in toolchain_profiles.items():
         print(f"DEBUG: Processing profile '{profile_id}'")
         
+        # Generate search patterns from profile_id
+        profile_patterns = [profile_id.lower()]
+        
+        # If profile_id contains numbers and letters, try variations
+        if re.match(r'^\d+.*', profile_id):
+            # For profiles like "950WINXP" -> ["950winxp", "950", "winxp"]
+            profile_patterns.append(profile_id.lower())
+            # Extract just the numbers
+            numbers = re.findall(r'\d+', profile_id)
+            if numbers:
+                profile_patterns.extend(numbers)
+            # Extract just the letters
+            letters = re.findall(r'[a-zA-Z]+', profile_id)
+            if letters:
+                profile_patterns.extend([letter.lower() for letter in letters])
+        
+        print(f"DEBUG: Generated search patterns for '{profile_id}': {profile_patterns}")
+        
         # Try to find matching package in scanned packages
         found_match = False
+        best_match = None
+        best_match_score = 0
+        
         for filename, package_info in scanned_packages['toolchain_packages'].items():
-            print(f"DEBUG: Checking against filename: {filename}")
+            # Remove the -bin.7z suffix from the filename to get the package name
+            package_name = filename.replace('-bin.7z', '')
             
-            # NEW MATCHING LOGIC: Match based on profile ID in filename
-            # Convert profile ID to expected filename pattern
-            expected_patterns = []
+            print(f"DEBUG: Checking package: {package_name}")
             
-            if profile_id == '950WINXP':
-                expected_patterns = ['950winxp']
-            elif profile_id == '1420':
-                expected_patterns = ['1420']
-            elif profile_id == 'STABLE':
-                expected_patterns = ['stable']
-            else:
-                # Generic fallback - look for profile_id in lowercase
-                expected_patterns = [profile_id.lower()]
+            # Calculate match score based on pattern matches
+            match_score = 0
+            matched_patterns = []
             
-            # Check if any expected pattern matches the filename
-            pattern_match = False
-            for pattern in expected_patterns:
-                if pattern.lower() in filename.lower():
-                    pattern_match = True
-                    print(f"DEBUG: Pattern match found: {pattern} in {filename}")
-                    break
+            for pattern in profile_patterns:
+                if pattern in package_name.lower():
+                    match_score += len(pattern)  # Longer matches get higher score
+                    matched_patterns.append(pattern)
             
-            # Also verify GCC version matches if available
-            gcc_version_match = False
-            if package_info.get('gcc_version'):
+            # Bonus points for GCC version match
+            if package_info.get('gcc_version') and 'name' in profile_info:
                 pkg_gcc_version = package_info['gcc_version']
-                expected_gcc_version = None
+                profile_name = profile_info['name']
                 
-                if profile_id == '950WINXP':
-                    expected_gcc_version = '9.5.0'
-                elif profile_id == '1420':
-                    expected_gcc_version = '14.2.0'
-                elif profile_id == 'STABLE':
-                    expected_gcc_version = '13.2.0'
-                
-                if expected_gcc_version and pkg_gcc_version == expected_gcc_version:
-                    gcc_version_match = True
-                    print(f"DEBUG: GCC version match: {pkg_gcc_version} == {expected_gcc_version}")
+                # Try to extract expected GCC version from profile name
+                version_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', profile_name)
+                if version_match:
+                    expected_gcc_version = version_match.group(1)
+                    if pkg_gcc_version.startswith(expected_gcc_version):
+                        match_score += 100  # High bonus for version match
+                        matched_patterns.append(f"gcc-{expected_gcc_version}")
+                        print(f"DEBUG: GCC version bonus: {pkg_gcc_version} matches expected {expected_gcc_version}")
             
-            # Consider it a match if pattern matches OR gcc version matches
-            if pattern_match or gcc_version_match:
-                print(f"DEBUG: MATCH FOUND! Profile '{profile_id}' matches '{filename}'")
-                if package_info['checksum'] != 'unknown':
-                    checksum_map[package_info['checksum']] = profile_id
-                    print(f"DEBUG: Added checksum mapping: {package_info['checksum']} -> {profile_id}")
-                if package_info['gcc_version']:
-                    version_map[profile_id] = package_info['gcc_version']
-                    print(f"DEBUG: Added version mapping: {profile_id} -> {package_info['gcc_version']}")
-                
-                # Store actual package names (without -bin.7z suffix)
-                sh_elf_name = filename.replace('-bin.7z', '')
-                arm_eabi_name = filename.replace('sh-elf-toolchain', 'arm-eabi-toolchain').replace('-bin.7z', '')
-                package_name_map[profile_id] = {
-                    'sh_elf': sh_elf_name,
-                    'arm_eabi': arm_eabi_name
-                }
-                print(f"DEBUG: Added package names: {profile_id} -> SH-ELF: {sh_elf_name}, ARM-EABI: {arm_eabi_name}")
-                
-                found_match = True
-                break
+            if match_score > best_match_score:
+                best_match_score = match_score
+                best_match = (filename, package_info)
+                print(f"DEBUG: New best match for '{profile_id}': {package_name} (score: {match_score}, patterns: {matched_patterns})")
+        
+        # Use the best match if we found one
+        if best_match and best_match_score > 0:
+            filename, package_info = best_match
+            package_name = filename.replace('-bin.7z', '')
+            
+            print(f"DEBUG: MATCH FOUND! Profile '{profile_id}' matches '{filename}' (score: {best_match_score})")
+            
+            # Store checksum mapping
+            if package_info['checksum'] != 'unknown':
+                checksum_map[package_info['checksum']] = profile_id
+                print(f"DEBUG: Added checksum mapping: {package_info['checksum']} -> {profile_id}")
+            
+            # Store version mapping (use the actual GCC version from the package)
+            if package_info['gcc_version']:
+                version_map[profile_id] = package_info['gcc_version']
+                print(f"DEBUG: Added version mapping: {profile_id} -> {package_info['gcc_version']}")
+            
+            # Store actual package names based on the found files
+            sh_elf_name = package_name
+            # Generate ARM EABI name by replacing sh-elf-toolchain with arm-eabi-toolchain
+            arm_eabi_name = package_name.replace('sh-elf-toolchain', 'arm-eabi-toolchain')
+            
+            package_name_map[profile_id] = {
+                'sh_elf': sh_elf_name,
+                'arm_eabi': arm_eabi_name
+            }
+            print(f"DEBUG: Added package names: {profile_id} -> SH-ELF: {sh_elf_name}, ARM-EABI: {arm_eabi_name}")
+            
+            found_match = True
         
         if not found_match:
             print(f"WARNING: No matching package found for profile '{profile_id}'")
+            
+            # Use INI information as fallback
+            sh_elf_package = profile_info.get('sh_elf_package', '')
+            arm_eabi_package = profile_info.get('arm_eabi_package', '')
+            package_name_map[profile_id] = {
+                'sh_elf': sh_elf_package,
+                'arm_eabi': arm_eabi_package
+            }
+            print(f"DEBUG: Using INI fallback for '{profile_id}' -> SH-ELF: {sh_elf_package}, ARM-EABI: {arm_eabi_package}")
     
     print(f"DEBUG: Final checksum_map: {checksum_map}")
     print(f"DEBUG: Final version_map: {version_map}")
