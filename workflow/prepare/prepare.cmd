@@ -14,7 +14,10 @@ set SETUP_PACKAGES_INPUT_DIR=%BASE_DIR%\pkgcache
 set LOG_FILE=%BASE_DIR%\prepare.log
 if exist %LOG_FILE% del %LOG_FILE%
 
-call :log %APP_TITLE%
+:banner
+call :log =============================================================================
+call :log DreamSDK - %APP_TITLE%
+call :log =============================================================================
 call :log
 
 :init
@@ -50,11 +53,15 @@ for /f "tokens=*" %%i in (%PACKAGES_CONFIG_FILE%) do (
 
 rem Just display the final output directory read from config file...
 call :log Target output directory: "%SETUP_OUTPUT_DIR%"
+call :log
 
 rem Utilities
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 if not exist %PATCH% set PATCH="%DREAMSDK_HOME%\usr\bin\patch.exe"
 set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
+set MKCFGGDB="%PYTHON%" "%BASE_DIR%\data\mkcfggdb.py"
+set MKCFGTOOLCHAINS="%PYTHON%" "%BASE_DIR%\data\mkcfgtoolchains.py"
+set MKCONFIG="%PYTHON%" "%BASE_DIR%\data\mkconfig.py"
 set DUALSIGN="%SETUP_OUTPUT_DIR%\tools\dualsign\dualsign.cmd"
 set WGET="%DREAMSDK_HOME%\msys\1.0\bin\wget.exe"
 if not exist %WGET% set WGET="%DREAMSDK_HOME%\usr\bin\wget.exe"
@@ -116,12 +123,16 @@ set BIN64_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\binary-packages-x64
 call :checkdir FUNC_RESULT %BIN64_PACKAGES_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
+set SETUP_CONFIG_OUTPUT_DIR=%SETUP_OUTPUT_DIR%\src\cfg
+call :checkdir FUNC_RESULT %SETUP_CONFIG_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto err_output_dir
+
 :check_sevenzip
 call :checkfile FUNC_RESULT %SEVENZIP%
 if "+%FUNC_RESULT%"=="+0" goto err_binary_sevenzip
 
 :check_upx
-call :checkfile FUNC_RESULT %UPX%
+call :checkfile FUNC_RESULT %UPXPACK%
 if "+%FUNC_RESULT%"=="+0" goto err_binary_upx
 
 :check_hhc
@@ -159,8 +170,13 @@ call :log Generating objects...
 call :copy "%SYSTEM_OBJECTS_INPUT_DIR%\files\mingw" "%OUTPUT_DIR%\msys-system-objects"
 call :copy "%SYSTEM_OBJECTS_INPUT_DIR%\files\mingw64" "%OUTPUT_DIR%\msys2-system-objects"
 call :copy "%SYSTEM_OBJECTS_INPUT_DIR%\files\common" "%OUTPUT_DIR%\dreamsdk-objects"
+
 set SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR=%OUTPUT_DIR%\msys-system-objects-configuration
 if not exist %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%
+set SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR64=%OUTPUT_DIR%\msys2-system-objects-configuration
+if not exist %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR64% mkdir %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR64%
+set "DREAMSDK_RUNTIME_PACKAGES_FILE32=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%\etc\packages.conf"
+set "DREAMSDK_RUNTIME_PACKAGES_FILE64=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR64%\etc\packages.conf"
 
 :setup_helpers
 call :log Copying Setup Helpers...
@@ -284,12 +300,29 @@ set PROCESSPKG_TOOLCHAIN_OPTIONAL=3
 set PROCESSPKG_TOOLCHAIN64=4
 set PROCESSPKG_TOOLCHAIN_OPTIONAL64=5
 
-call :log Processing MinGW foundation base package ...
+:processing_base
+call :log Processing foundation base packages ...
 rem MinGW x86
 call :processpkg %PROCESSPKG_UNPACK% mingw-base %MINGW32_BASE_VERSION%
 rem MinGW x64
 call :processpkg %PROCESSPKG_UNPACK% mingw64-base %MINGW64_BASE_VERSION%
 
+:processing_base_mingw_profile
+call :log * Generating profile file for mingw-base ...
+set SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%\etc
+set SYSTEM_OBJECTS_PROFILE_INPUT_FILE=%OUTPUT_DIR%\mingw-base\msys\1.0\etc\profile
+set SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE=%SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%\profile
+if not exist %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%
+if exist %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE% del %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE%
+if not exist %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% (
+    call :err File not found: "%SYSTEM_OBJECTS_PROFILE_INPUT_FILE%"
+    goto end
+)
+move %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+call :patch FUNC_RESULT %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% %SYSTEM_OBJECTS_INPUT_DIR%\patches\etc.diff
+if "+%FUNC_RESULT%"=="+0" goto end
+
+:processing_msys
 call :log Processing MSYS packages ...
 rem MSYS x86
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% bash %MSYS32_BASE_BASH_VERSION% msys-base
@@ -305,18 +338,20 @@ call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% wget %MSYS32_BASE_WGET_VE
 rem MSYS x64
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% dirhash %MSYS64_BASE_DIRHASH_VERSION% msys2-base
 
-call :log Processing utilities ...
+:processing_utilities
+call :log Processing utilities packages ...
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% cdrtools %UTILITIES_CDRTOOLS_VERSION% utilities
 call :processpkg %PROCESSPKG_UNPACK_EXTRACT_TO_PARENT% img4dc %UTILITIES_IMG4DC_VERSION% utilities
 
-call :log Processing addons command-line tools ...
+:processing_addons
+call :log Processing addons command-line tools packages ...
 call :processpkg %PROCESSPKG_UNPACK% elevate %ADDONS_CMD_ELEVATE_VERSION% addons-cmd
 call :processpkg %PROCESSPKG_UNPACK% pvr2png %ADDONS_CMD_PVR2PNG_VERSION% addons-cmd
 call :processpkg %PROCESSPKG_UNPACK% txfutils %ADDONS_CMD_TXFUTILS_VERSION% addons-cmd
 call :processpkg %PROCESSPKG_UNPACK% txfutils %ADDONS_CMD_TXFUTILS_VERSION% addons-cmd txflib
 call :processpkg %PROCESSPKG_UNPACK% vmutool %ADDONS_CMD_VMUTOOL_VERSION% addons-cmd
 
-call :log Processing addons GUI tools ...
+call :log Processing addons GUI tools packages ...
 call :processpkg %PROCESSPKG_UNPACK% bdreams %ADDONS_GUI_BDREAMS_VERSION% addons-gui
 call :processpkg %PROCESSPKG_UNPACK% buildsbi %ADDONS_GUI_BUILDSBI_VERSION% addons-gui
 call :processpkg %PROCESSPKG_UNPACK% checker %ADDONS_GUI_CHECKER_VERSION% addons-gui
@@ -326,33 +361,33 @@ call :processpkg %PROCESSPKG_UNPACK% mrwriter %ADDONS_GUI_MRWRITER_VERSION% addo
 call :processpkg %PROCESSPKG_UNPACK% sbinducr %ADDONS_GUI_SBINDUCR_VERSION% addons-gui
 call :processpkg %PROCESSPKG_UNPACK% vmutool %ADDONS_GUI_VMUTOOL_VERSION% addons-gui
 
-call :log Processing toolchains ...
+:processing_toolchains
+call :log Processing toolchains packages ...
 call :processtoolchains 32 "%TOOLCHAINS32_VERSIONS%"
 
-call :log Processing toolchains (x64)...
+call :log Processing toolchains packages (x64)...
 call :processtoolchains 64 "%TOOLCHAINS64_VERSIONS%"
 
-call :log Processing GDB: GNU Debugger ...
+:processing_gdb
+call :log Processing GDB: GNU Debugger packages ...
 call :processgdb 32 %GDB32_VERSION%
 
-call :log Processing GDB: GNU Debugger (x64)...
+call :log Processing GDB: GNU Debugger packages (x64)...
 call :processgdb 64 %GDB64_VERSION%
 
-:profile
-call :log Generating profile file...
-set SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%\etc
-set SYSTEM_OBJECTS_PROFILE_INPUT_FILE=%OUTPUT_DIR%\mingw-base\msys\1.0\etc\profile
-set SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE=%SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%\profile
+:processing_runtime_packages_configuration
+call :log Generating runtime configuration for packages ...
+echo on
+%MKCONFIG% %PACKAGES_CONFIG_FILE% %BIN_PACKAGES_OUTPUT_DIR% %BIN64_PACKAGES_OUTPUT_DIR% %DREAMSDK_RUNTIME_PACKAGES_FILE32% %DREAMSDK_RUNTIME_PACKAGES_FILE64% %SEVENZIP% >> %LOG_FILE% 2>&1
 
-if not exist %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR%
-if exist %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE% del %SYSTEM_OBJECTS_PROFILE_OUTPUT_FILE%
-if not exist %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% (
-    call :err File not found: "%SYSTEM_OBJECTS_PROFILE_INPUT_FILE%"
-    goto end
-)
-move %SYSTEM_OBJECTS_PROFILE_INPUT_FILE% %SYSTEM_OBJECTS_CONFIGURATION_ETC_OUTPUT_DIR% >> %LOG_FILE% 2>&1
-call :patch FUNC_RESULT %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% %SYSTEM_OBJECTS_INPUT_DIR%\patches\etc.diff
-if "+%FUNC_RESULT%"=="+0" goto end
+:processing_inno_setup
+call :log Generating Inno Setup configuration files ...
+
+call :log * Generating GDB configuration file...
+%MKCFGGDB% %SETUP_CONFIG_OUTPUT_DIR% %GDB32_VERSION% %GDB64_VERSION% %BIN_PACKAGES_OUTPUT_DIR% %BIN64_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+
+call :log * Generating toolchains configuration file...
+%MKCFGTOOLCHAINS% %SETUP_CONFIG_OUTPUT_DIR% %PACKAGES_CONFIG_FILE% >> %LOG_FILE% 2>&1
 
 :finish
 call :log
@@ -401,7 +436,7 @@ goto end
 
 :err_binary_upx
 call :err UPX was not found.
-call :log File: "%UPX%"
+call :log File: "%UPXPACK%"
 goto end
 
 :err_binary_dualsign
@@ -486,14 +521,16 @@ call :log ERROR: %*
 goto :EOF
 
 :log
-set tmplog=%*
-if "%tmplog%"=="" goto logempty
-echo %tmplog%
-echo %tmplog%>> %LOG_FILE% 2>&1
+setlocal EnableDelayedExpansion
+set "tmplog=%*"
+if "!tmplog!"=="" goto log_empty
+echo !tmplog!
+echo !tmplog! >> %LOG_FILE% 2>&1
+endlocal
 goto :EOF
-:logempty
+:log_empty
 echo.
-echo.>> %LOG_FILE% 2>&1
+echo. >> %LOG_FILE% 2>&1
 goto :EOF
 
 :processpkg
@@ -699,7 +736,7 @@ goto copybinarycompress
 :copybinarycheckdebug
 call :warn %_name% is compiled in DEBUG mode...
 :copybinarycompress
-%UPX% -9 %_upx_optional_switches% %_target%\%_fname% >> %LOG_FILE% 2>&1
+%UPXPACK% -9 %_upx_optional_switches% %_target%\%_fname% >> %LOG_FILE% 2>&1
 if "%SIGN_BINARIES%+"=="1+" (
     call %DUALSIGN% %_target%\%_fname% >> %LOG_FILE% 2>&1
     if "$!errorlevel!"=="$0" goto copybinaryexit
@@ -891,13 +928,13 @@ for %%v in (%_toolchain_profiles%) do (
     rem Trim spaces before and after the key
     set "_key=!_key: =!"    
     rem Extract the value from the key if the pattern is found
-    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_!_current_profile!_PACKAGE_ARMEABI" (
+    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_PACKAGE_ARMEABI_!_current_profile!" (
       set "_armeabi_value=!_value!"
     )
-    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_!_current_profile!_PACKAGE_SHELF" (
+    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_PACKAGE_SHELF_!_current_profile!" (
       set "_shelf_value=!_value!"
     )
-    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_!_current_profile!_NAME" (
+    if "!_key!"=="TOOLCHAINS!_toolchain_arch!_VERSION_NAME_!_current_profile!" (
       set "_profile_name=!_value!"
     )
   )
