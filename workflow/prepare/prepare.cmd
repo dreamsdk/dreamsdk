@@ -61,6 +61,7 @@ if not exist %PATCH% set PATCH="%DREAMSDK_HOME%\usr\bin\patch.exe"
 set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
 set MKCFGGDB="%PYTHON%" "%BASE_DIR%\data\mkcfggdb.py"
 set MKCFGTOOLCHAINS="%PYTHON%" "%BASE_DIR%\data\mkcfgtoolchains.py"
+set MKCONFIG="%PYTHON%" "%BASE_DIR%\data\mkconfig.py"
 set DUALSIGN="%SETUP_OUTPUT_DIR%\tools\dualsign\dualsign.cmd"
 set WGET="%DREAMSDK_HOME%\msys\1.0\bin\wget.exe"
 if not exist %WGET% set WGET="%DREAMSDK_HOME%\usr\bin\wget.exe"
@@ -169,8 +170,13 @@ call :log Generating objects...
 call :copy "%SYSTEM_OBJECTS_INPUT_DIR%\files\mingw" "%OUTPUT_DIR%\msys-system-objects"
 call :copy "%SYSTEM_OBJECTS_INPUT_DIR%\files\mingw64" "%OUTPUT_DIR%\msys2-system-objects"
 call :copy "%SYSTEM_OBJECTS_INPUT_DIR%\files\common" "%OUTPUT_DIR%\dreamsdk-objects"
+
 set SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR=%OUTPUT_DIR%\msys-system-objects-configuration
 if not exist %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%
+set SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR64=%OUTPUT_DIR%\msys2-system-objects-configuration
+if not exist %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR64% mkdir %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR64%
+set "DREAMSDK_RUNTIME_PACKAGES_FILE32=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%\etc\packages.conf"
+set "DREAMSDK_RUNTIME_PACKAGES_FILE64=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR64%\etc\packages.conf"
 
 :setup_helpers
 call :log Copying Setup Helpers...
@@ -368,6 +374,11 @@ call :processgdb 32 %GDB32_VERSION%
 
 call :log Processing GDB: GNU Debugger packages (x64)...
 call :processgdb 64 %GDB64_VERSION%
+
+:processing_runtime_packages_configuration
+call :log Generating runtime configuration for packages ...
+echo on
+%MKCONFIG% %PACKAGES_CONFIG_FILE% %BIN_PACKAGES_OUTPUT_DIR% %BIN64_PACKAGES_OUTPUT_DIR% %DREAMSDK_RUNTIME_PACKAGES_FILE32% %DREAMSDK_RUNTIME_PACKAGES_FILE64% %SEVENZIP% >> %LOG_FILE% 2>&1
 
 :processing_inno_setup
 call :log Generating Inno Setup configuration files ...
