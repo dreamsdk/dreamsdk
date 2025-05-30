@@ -9,6 +9,7 @@ to generate separate .conf files for 32-bit and 64-bit architectures with checks
 
 import sys
 import os
+import logging
 import configparser
 import hashlib
 import re
@@ -118,6 +119,8 @@ def extract_7z_and_get_checksum(archive_path: str, target_executable: str, seven
 
 def scan_directory_for_packages(directory: str, architecture: str, sevenzip_path: str) -> Dict[str, Dict]:
     """Scan directory for 7z packages and collect information."""
+    logger = logging.getLogger(__name__)
+    
     packages_info = {
         'gdb_packages': {},
         'toolchain_packages': {}
@@ -127,14 +130,14 @@ def scan_directory_for_packages(directory: str, architecture: str, sevenzip_path
         print(f"Warning: Directory {directory} does not exist")
         return packages_info
     
-    print(f"Scanning {architecture} directory: {directory}")
+    print(f"Scanning directory for {architecture}-bit: {directory}")
     
     for filename in os.listdir(directory):
         if not filename.endswith('.7z'):
             continue
             
         full_path = os.path.join(directory, filename)
-        print(f"Found file: {filename}")  # Debug: show all .7z files
+        logger.debug(f"Found file: {filename}")  # Debug: show all .7z files
         
         # Process GDB packages
         if filename.startswith('sh-elf-gdb-'):
@@ -198,11 +201,11 @@ def scan_directory_for_packages(directory: str, architecture: str, sevenzip_path
             else:
                 print(f"Failed to process alternative toolchain package: {filename}")
         else:
-            print(f"Skipping file: {filename} (doesn't match any pattern)")
+            logger.debug(f"Skipping file: {filename} (doesn't match any pattern)")
     
-    print(f"DEBUG: Found {len(packages_info['toolchain_packages'])} toolchain packages:")
+    logger.debug(f"Found {len(packages_info['toolchain_packages'])} toolchain packages:")
     for filename, info in packages_info['toolchain_packages'].items():
-        print(f"  - {filename}: GCC {info['gcc_version']}, checksum: {info['checksum'][:8]}...")
+        logger.debug(f"  - {filename}: GCC {info['gcc_version']}, checksum: {info['checksum'][:8]}...")
     
     return packages_info
     
@@ -228,6 +231,8 @@ def parse_ini_config(config_path: str) -> Dict:
 
 def extract_toolchain_profiles_from_ini(ini_data: Dict, architecture: str) -> Dict:
     """Extract toolchain profiles from INI data."""
+    logger = logging.getLogger(__name__)
+    
     profiles = {}
     
     # Get versions from main Toolchains section
@@ -251,7 +256,7 @@ def extract_toolchain_profiles_from_ini(ini_data: Dict, architecture: str) -> Di
     else:
         profile_versions = [v.strip() for v in versions_value.split(';')]
     
-    print(f"Found toolchain versions for {architecture}-bit: {profile_versions}")
+    logger.debug(f"Found toolchain versions for {architecture}-bit: {profile_versions}")
     
     # Get profile details from architecture-specific section
     arch_section_name = f"Toolchains{architecture}"
@@ -260,7 +265,7 @@ def extract_toolchain_profiles_from_ini(ini_data: Dict, architecture: str) -> Di
         return profiles
     
     arch_section = ini_data[arch_section_name]
-    print(f"Available keys in [{arch_section_name}]: {list(arch_section.keys())}")
+    logger.debug(f"Available keys in [{arch_section_name}]: {list(arch_section.keys())}")
     
     # Extract profile information
     for version in profile_versions:
@@ -302,16 +307,18 @@ def extract_toolchain_profiles_from_ini(ini_data: Dict, architecture: str) -> Di
 
 def match_toolchain_checksums_and_versions(toolchain_profiles: Dict, scanned_packages: Dict) -> Tuple[Dict, Dict, Dict]:
     """Match toolchain profiles with their checksums and versions from scanned packages."""
+    logger = logging.getLogger(__name__)
+    
     checksum_map = {}
     version_map = {}
     package_name_map = {}  # Maps profile_id to actual package names
     
-    print("DEBUG: Matching toolchain profiles with scanned packages...")
-    print(f"DEBUG: Toolchain profiles: {list(toolchain_profiles.keys())}")
-    print(f"DEBUG: Scanned packages: {list(scanned_packages['toolchain_packages'].keys())}")
+    logger.debug(f"Matching toolchain profiles with scanned packages...")
+    logger.debug(f"Toolchain profiles: {list(toolchain_profiles.keys())}")
+    logger.debug(f"Scanned packages: {list(scanned_packages['toolchain_packages'].keys())}")
     
     for profile_id, profile_info in toolchain_profiles.items():
-        print(f"DEBUG: Processing profile '{profile_id}'")
+        logger.debug(f"Processing profile '{profile_id}'")
         
         # Generate search patterns from profile_id
         profile_patterns = [profile_id.lower()]
@@ -329,7 +336,7 @@ def match_toolchain_checksums_and_versions(toolchain_profiles: Dict, scanned_pac
             if letters:
                 profile_patterns.extend([letter.lower() for letter in letters])
         
-        print(f"DEBUG: Generated search patterns for '{profile_id}': {profile_patterns}")
+        logger.debug(f"Generated search patterns for '{profile_id}': {profile_patterns}")
         
         # Try to find matching package in scanned packages
         found_match = False
@@ -340,7 +347,7 @@ def match_toolchain_checksums_and_versions(toolchain_profiles: Dict, scanned_pac
             # Remove the -bin.7z suffix from the filename to get the package name
             package_name = filename.replace('-bin.7z', '')
             
-            print(f"DEBUG: Checking package: {package_name}")
+            logger.debug(f"Checking package: {package_name}")
             
             # Calculate match score based on pattern matches
             match_score = 0
@@ -363,29 +370,29 @@ def match_toolchain_checksums_and_versions(toolchain_profiles: Dict, scanned_pac
                     if pkg_gcc_version.startswith(expected_gcc_version):
                         match_score += 100  # High bonus for version match
                         matched_patterns.append(f"gcc-{expected_gcc_version}")
-                        print(f"DEBUG: GCC version bonus: {pkg_gcc_version} matches expected {expected_gcc_version}")
+                        logger.debug(f"GCC version bonus: {pkg_gcc_version} matches expected {expected_gcc_version}")
             
             if match_score > best_match_score:
                 best_match_score = match_score
                 best_match = (filename, package_info)
-                print(f"DEBUG: New best match for '{profile_id}': {package_name} (score: {match_score}, patterns: {matched_patterns})")
+                logger.debug(f"New best match for '{profile_id}': {package_name} (score: {match_score}, patterns: {matched_patterns})")
         
         # Use the best match if we found one
         if best_match and best_match_score > 0:
             filename, package_info = best_match
             package_name = filename.replace('-bin.7z', '')
             
-            print(f"DEBUG: MATCH FOUND! Profile '{profile_id}' matches '{filename}' (score: {best_match_score})")
+            logger.debug(f"MATCH FOUND! Profile '{profile_id}' matches '{filename}' (score: {best_match_score})")
             
             # Store checksum mapping
             if package_info['checksum'] != 'unknown':
                 checksum_map[package_info['checksum']] = profile_id
-                print(f"DEBUG: Added checksum mapping: {package_info['checksum']} -> {profile_id}")
+                logger.debug(f"Added checksum mapping: {package_info['checksum']} -> {profile_id}")
             
             # Store version mapping (use the actual GCC version from the package)
             if package_info['gcc_version']:
                 version_map[profile_id] = package_info['gcc_version']
-                print(f"DEBUG: Added version mapping: {profile_id} -> {package_info['gcc_version']}")
+                logger.debug(f"Added version mapping: {profile_id} -> {package_info['gcc_version']}")
             
             # Store actual package names based on the found files
             sh_elf_name = package_name
@@ -396,7 +403,7 @@ def match_toolchain_checksums_and_versions(toolchain_profiles: Dict, scanned_pac
                 'sh_elf': sh_elf_name,
                 'arm_eabi': arm_eabi_name
             }
-            print(f"DEBUG: Added package names: {profile_id} -> SH-ELF: {sh_elf_name}, ARM-EABI: {arm_eabi_name}")
+            logger.debug(f"Added package names: {profile_id} -> SH-ELF: {sh_elf_name}, ARM-EABI: {arm_eabi_name}")
             
             found_match = True
         
@@ -410,11 +417,11 @@ def match_toolchain_checksums_and_versions(toolchain_profiles: Dict, scanned_pac
                 'sh_elf': sh_elf_package,
                 'arm_eabi': arm_eabi_package
             }
-            print(f"DEBUG: Using INI fallback for '{profile_id}' -> SH-ELF: {sh_elf_package}, ARM-EABI: {arm_eabi_package}")
+            logger.debug(f"Using INI fallback for '{profile_id}' -> SH-ELF: {sh_elf_package}, ARM-EABI: {arm_eabi_package}")
     
-    print(f"DEBUG: Final checksum_map: {checksum_map}")
-    print(f"DEBUG: Final version_map: {version_map}")
-    print(f"DEBUG: Final package_name_map: {package_name_map}")
+    logger.debug(f"Final checksum_map: {checksum_map}")
+    logger.debug(f"Final version_map: {version_map}")
+    logger.debug(f"Final package_name_map: {package_name_map}")
     return checksum_map, version_map, package_name_map
 
 def generate_conf_file(ini_data: Dict, packages_info: Dict, architecture: str) -> str:
@@ -601,5 +608,7 @@ def main():
         print(f"Error during processing: {e}")
         sys.exit(1)
 
+# Entry point
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
     main()
