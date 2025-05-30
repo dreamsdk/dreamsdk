@@ -19,6 +19,53 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import subprocess
 
+def sort_gdb_profiles(profile_names):
+    """Sort GDB profiles with proper numerical ordering for Python versions."""
+    def gdb_sort_key(profile_name):
+        if profile_name == 'NOPYTHON':
+            return (0, 0, 0)  # NOPYTHON first
+        elif profile_name.startswith('PYTHON'):
+            version_str = profile_name[6:]  # Remove 'PYTHON' prefix
+            try:
+                # Handle versions like "27", "310", "311", etc.
+                if len(version_str) == 2:
+                    # Two digits: "27" -> 2.7, "33" -> 3.3, etc.
+                    major = int(version_str[0])
+                    minor = int(version_str[1])
+                elif len(version_str) == 3:
+                    # Three digits: "310" -> 3.10, "311" -> 3.11, etc.
+                    major = int(version_str[0])
+                    minor = int(version_str[1:])
+                else:
+                    # Fallback for unexpected formats
+                    return (999, 999, profile_name)
+                return (1, major, minor)  # Group after NOPYTHON
+            except ValueError:
+                return (999, 999, profile_name)  # Fallback for parsing errors
+        else:
+            return (999, 999, profile_name)  # Unknown formats last
+    
+    return sorted(profile_names, key=gdb_sort_key)
+
+def sort_toolchain_profiles(profile_names):
+    """Sort toolchain profiles with STABLE first, then original order."""
+    if not profile_names:
+        return profile_names
+    
+    result = []
+    remaining = []
+    
+    # Extract STABLE first if it exists
+    for profile in profile_names:
+        if profile == 'STABLE':
+            result.append(profile)
+        else:
+            remaining.append(profile)
+    
+    # Add the rest in their original order
+    result.extend(remaining)
+    return result
+
 def extract_python_version_from_filename(filename: str) -> Optional[str]:
     """Extract Python version from GDB package filename."""
     patterns = [
@@ -432,20 +479,19 @@ def generate_conf_file(ini_data: Dict, packages_info: Dict, architecture: str) -
     toolchain_profiles = extract_toolchain_profiles_from_ini(ini_data, architecture)
     
     # Header
-    conf_lines.append(f"# Generated {architecture}-bit configuration file")
-    conf_lines.append("# Contains toolchain and GDB package information with checksums")
+    conf_lines.append(f"; {architecture}-bit configuration file")
     conf_lines.append("")
     
     # [Packages] section
     conf_lines.append("[Packages]")
     
     # ToolchainProfiles
-    toolchain_profile_names = list(toolchain_profiles.keys())
+    toolchain_profile_names = sort_toolchain_profiles(list(toolchain_profiles.keys()))
     if toolchain_profile_names:
         conf_lines.append(f"ToolchainProfiles={';'.join(toolchain_profile_names)}")
-    
+
     # GdbProfiles
-    gdb_profile_names = sorted(packages_info['gdb_packages'].keys())
+    gdb_profile_names = sort_gdb_profiles(list(packages_info['gdb_packages'].keys()))
     if gdb_profile_names:
         conf_lines.append(f"GdbProfiles={';'.join(gdb_profile_names)}")
     
