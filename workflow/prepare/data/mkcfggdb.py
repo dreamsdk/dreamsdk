@@ -68,8 +68,8 @@ def get_formatted_python_version(version):
     Returns:
         str: Formatted version (e.g., "310")
     """
-    if not version:
-        return "nopython"
+    if not version or version == "nopython":
+        return None
     return version.replace(".", "")
 
 def generate_custom_messages(packages_32bit, packages_64bit):
@@ -153,7 +153,7 @@ def generate_package_initializations(packages, arch):
     """
     arch_desc = "x86" if arch == "32" else "x64"
     content = f"  // {arch}-bit ({arch_desc})\n"
-    content += f"  InitializeGdb{arch}Packages({{#Gdb{arch}Count}}, {{#Gdb{arch}Version}});\n\n"
+    content += f"  InitializeGdb{arch}Packages({{#Gdb{arch}Count}}, '{{#Gdb{arch}Version}}');\n\n"
     
     for i, (pkg_name, pkg_version) in enumerate(packages):
         formatted_version = get_formatted_python_version(pkg_version)
@@ -322,7 +322,7 @@ def main():
     content = generate_gdb_config(version_32bit, version_64bit, path_32bit, path_64bit)
     
     # Write to output file    
-    full_output_path = os.path.join(path_output, 'gdb.config.out')
+    full_output_path = os.path.join(path_output, 'gdb.context.iss')
     with open(full_output_path, 'w', encoding='utf-8') as f:
         f.write(content)
     

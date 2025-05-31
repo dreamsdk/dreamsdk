@@ -51,8 +51,12 @@ for /f "tokens=*" %%i in (%PACKAGES_CONFIG_FILE%) do (
   )
 )
 
+rem Generate package version
+set "PACKAGE_VERSION=%VERSION_NUMBER_MAJOR%.%VERSION_NUMBER_MINOR%.%VERSION_NUMBER_BUILD%"
+
 rem Just display the final output directory read from config file...
 call :log Target output directory: "%SETUP_OUTPUT_DIR%"
+call :log Target version: "%PACKAGE_VERSION%"
 call :log
 
 rem Utilities
@@ -62,6 +66,8 @@ set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
 set MKCFGGDB="%PYTHON%" "%BASE_DIR%\data\mkcfggdb.py"
 set MKCFGTOOLCHAINS="%PYTHON%" "%BASE_DIR%\data\mkcfgtoolchains.py"
 set MKCONFIG="%PYTHON%" "%BASE_DIR%\data\mkconfig.py"
+set MKVERSION="%PYTHON%" "%BASE_DIR%\data\mkversion.py"
+set VERSIONUPDATER="%PYTHON%" "%BASE_DIR%\data\versionupdater.py"
 set DUALSIGN="%SETUP_OUTPUT_DIR%\tools\dualsign\dualsign.cmd"
 set WGET="%DREAMSDK_HOME%\msys\1.0\bin\wget.exe"
 if not exist %WGET% set WGET="%DREAMSDK_HOME%\usr\bin\wget.exe"
@@ -123,7 +129,7 @@ set BIN64_PACKAGES_OUTPUT_DIR=%OUTPUT_DIR%\binary-packages-x64
 call :checkdir FUNC_RESULT %BIN64_PACKAGES_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
-set SETUP_CONFIG_OUTPUT_DIR=%SETUP_OUTPUT_DIR%\src\cfg
+set "SETUP_CONFIG_OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.context"
 call :checkdir FUNC_RESULT %SETUP_CONFIG_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
@@ -175,8 +181,8 @@ set SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR=%OUTPUT_DIR%\msys-system-objects-con
 if not exist %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR% mkdir %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%
 set SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR64=%OUTPUT_DIR%\msys2-system-objects-configuration
 if not exist %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR64% mkdir %SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR64%
-set "DREAMSDK_RUNTIME_PACKAGES_FILE32=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%\etc\packages.conf"
-set "DREAMSDK_RUNTIME_PACKAGES_FILE64=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR64%\etc\packages.conf"
+set "DREAMSDK_RUNTIME_PACKAGES_FILE32=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR%\etc\dreamsdk\packages.conf"
+set "DREAMSDK_RUNTIME_PACKAGES_FILE64=%SYSTEM_OBJECTS_CONFIGURATION_OUTPUT_DIR64%\etc\dreamsdk\packages.conf"
 
 :setup_helpers
 call :log Copying Setup Helpers...
@@ -377,17 +383,19 @@ call :processgdb 64 %GDB64_VERSION%
 
 :processing_runtime_packages_configuration
 call :log Generating runtime configuration for packages ...
-echo on
 %MKCONFIG% %PACKAGES_CONFIG_FILE% %BIN_PACKAGES_OUTPUT_DIR% %BIN64_PACKAGES_OUTPUT_DIR% %DREAMSDK_RUNTIME_PACKAGES_FILE32% %DREAMSDK_RUNTIME_PACKAGES_FILE64% %SEVENZIP% >> %LOG_FILE% 2>&1
 
 :processing_inno_setup
-call :log Generating Inno Setup configuration files ...
+call :log Generating Inno Setup context files ...
 
-call :log * Generating GDB configuration file...
+call :log * Generating GDB context file ...
 %MKCFGGDB% %SETUP_CONFIG_OUTPUT_DIR% %GDB32_VERSION% %GDB64_VERSION% %BIN_PACKAGES_OUTPUT_DIR% %BIN64_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 
-call :log * Generating toolchains configuration file...
+call :log * Generating toolchains context file ...
 %MKCFGTOOLCHAINS% %SETUP_CONFIG_OUTPUT_DIR% %PACKAGES_CONFIG_FILE% >> %LOG_FILE% 2>&1
+
+call :log * Generating version context file ...
+%MKVERSION% %SETUP_CONFIG_OUTPUT_DIR% %VERSION_NUMBER_MAJOR% %VERSION_NUMBER_MINOR% %VERSION_NUMBER_BUILD% >> %LOG_FILE% 2>&1
 
 :finish
 call :log
@@ -696,6 +704,9 @@ if not exist "%_project%" (
   set _result=0
   goto copybinaryexit
 )
+:copybinary_updver
+%VERSIONUPDATER% %_project% %PACKAGE_VERSION% >> %LOG_FILE% 2>&1
+:copybinary_build
 set LAZDEBUG=
 if "+%DEBUG_MODE%"=="+1" set LAZDEBUG=--verbose
 set LAZCPU=i386

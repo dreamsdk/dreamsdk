@@ -524,14 +524,14 @@ def generate_conf_file(ini_data: Dict, packages_info: Dict, architecture: str) -
         
         # Use actual package names if available, otherwise use INI values
         if profile_id in package_names:
-            conf_lines.append(f"ArmEabiPackage={package_names[profile_id]['arm_eabi']}")
-            conf_lines.append(f"ShElfPackage={package_names[profile_id]['sh_elf']}")
+            conf_lines.append(f"ArmEabiPackage={package_names[profile_id]['arm_eabi']}-bin.7z")
+            conf_lines.append(f"ShElfPackage={package_names[profile_id]['sh_elf']}-bin.7z")
         else:
             # Fallback to INI values
             if 'arm_eabi_package' in profile_info:
-                conf_lines.append(f"ArmEabiPackage={profile_info['arm_eabi_package']}")
+                conf_lines.append(f"ArmEabiPackage={profile_info['arm_eabi_package']}-bin.7z")
             if 'sh_elf_package' in profile_info:
-                conf_lines.append(f"ShElfPackage={profile_info['sh_elf_package']}")
+                conf_lines.append(f"ShElfPackage={profile_info['sh_elf_package']}-bin.7z")
         
         conf_lines.append("")
     
@@ -553,7 +553,7 @@ def generate_conf_file(ini_data: Dict, packages_info: Dict, architecture: str) -
                 gdb_version = ini_data['Toolchains'][gdb_key]
         
         conf_lines.append(f"Version={gdb_version}")
-        conf_lines.append(f"Package={gdb_info['package_name']}")
+        conf_lines.append(f"GdbPackage={gdb_info['package_name']}-bin.7z")
         conf_lines.append("")
     
     # Checksum sections
