@@ -153,7 +153,7 @@ def generate_initialization_code_section(toolchains_data, bitness):
     """
     arch_desc = "x86" if bitness == "32" else "x64"
     content = f"  // {bitness}-bit ({arch_desc})\n"
-    content += f"  SetArrayLength(Toolchain{bitness}Packages, {{#Toolchain{bitness}Count}});\n\n"
+    content += f"  InitializeToolchain{bitness}Packages({{#Toolchain{bitness}Count}});\n\n"
     
     for i, toolchain in enumerate(toolchains_data):
         profile = toolchain['profile']
