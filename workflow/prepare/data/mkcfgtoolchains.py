@@ -135,8 +135,8 @@ def generate_custom_messages_section(toolchains_data, bitness):
         name = toolchain['name']
         desc = toolchain['description']
         
-        content += f'ToolchainsName{bitness}_{profile_normalized}={name}\n'
-        content += f'ToolchainsDesc{bitness}_{profile_normalized}={desc}\n'
+        content += f'ToolchainName{bitness}_{profile_normalized}={name}\n'
+        content += f'ToolchainDesc{bitness}_{profile_normalized}={desc}\n'
     
     return content
 
@@ -153,15 +153,15 @@ def generate_initialization_code_section(toolchains_data, bitness):
     """
     arch_desc = "x86" if bitness == "32" else "x64"
     content = f"  // {bitness}-bit ({arch_desc})\n"
-    content += f"  SetArrayLength(Toolchains{bitness}Packages, {{#Toolchains{bitness}Count}});\n\n"
+    content += f"  InitializeToolchain{bitness}Packages({{#Toolchain{bitness}Count}});\n\n"
     
     for i, toolchain in enumerate(toolchains_data):
         profile = toolchain['profile']
         profile_normalized = normalize_profile(profile)
         
         content += f"  // {toolchain['name']}\n"
-        content += f"  Toolchains{bitness}Packages[{i}].Name := ExpandConstant('{{cm:ToolchainsName{bitness}_{profile_normalized}}}');\n"
-        content += f"  Toolchains{bitness}Packages[{i}].Description := ExpandConstant('{{cm:ToolchainsDesc{bitness}_{profile_normalized}}}');\n"
+        content += f"  Toolchain{bitness}Packages[{i}].Name := ExpandConstant('{{cm:ToolchainName{bitness}_{profile_normalized}}}');\n"
+        content += f"  Toolchain{bitness}Packages[{i}].Description := ExpandConstant('{{cm:ToolchainDesc{bitness}_{profile_normalized}}}');\n"
         
         # Add a newline between toolchains but not after the last one
         if i < len(toolchains_data) - 1:
@@ -207,14 +207,14 @@ def generate_components_section_entries(toolchains_data, bitness):
     """
     arch_desc = "x86" if bitness == "32" else "x64"
     content = f"; {bitness}-bit ({arch_desc})\n"
-    content += f'Name: "main\\toolchains\\{bitness}"; Description: "{{cm:ComponentToolchains{bitness}}}"; Flags: fixed\n'
+    content += f'Name: "main\\toolchains\\{bitness}"; Description: "{{cm:ComponentToolchain{bitness}}}"; Flags: fixed\n'
     
     for toolchain in toolchains_data:
         profile = toolchain['profile']
         profile_normalized = normalize_profile(profile)
         
         content += f'Name: "main\\toolchains\\{bitness}\\{profile}"; '
-        content += f'Description: "{{cm:ToolchainsName{bitness}_{profile_normalized}}}"; '
+        content += f'Description: "{{cm:ToolchainName{bitness}_{profile_normalized}}}"; '
         content += 'Flags: exclusive fixed\n'
     
     return content
@@ -258,7 +258,7 @@ def generate_toolchains_config(config_path, output_path):
             # Add bitness count
             arch_desc = "x86" if bitness == "32" else "x64"
             content += f"; {bitness}-bit ({arch_desc})\n"
-            content += f"#define Toolchains{bitness}Count {len(toolchains_data)}\n\n"
+            content += f"#define Toolchain{bitness}Count {len(toolchains_data)}\n\n"
             
             # Add source directory definitions
             content += generate_source_directory_definitions(toolchains_data, bitness)
@@ -301,7 +301,7 @@ def generate_toolchains_config(config_path, output_path):
             content += generate_components_section_entries(toolchains64_data, "64")
         
         # Write to output file
-        full_output_path = os.path.join(output_path, 'toolchains.config.out')
+        full_output_path = os.path.join(output_path, 'toolchains.context.iss')
         with open(full_output_path, 'w', encoding='utf-8') as f:
             f.write(content)
         
