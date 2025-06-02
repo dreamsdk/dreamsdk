@@ -154,6 +154,10 @@ call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
 if "$%PYTHON_VERSION_MAJOR%"=="$3" goto check_dualsign
 goto err_binary_python
 
+:check_iscc
+call :checkfile FUNC_RESULT %ISCC%
+if "+%FUNC_RESULT%"=="+0" goto err_binary_iscc
+
 :check_dualsign
 if "%SIGN_BINARIES%+"=="1+" (
   if not exist %DUALSIGN% goto err_binary_dualsign
@@ -397,6 +401,14 @@ call :log * Generating toolchains context file ...
 call :log * Generating version context file ...
 %MKVERSION% %SETUP_CONFIG_OUTPUT_DIR% %VERSION_NUMBER_MAJOR% %VERSION_NUMBER_MINOR% %VERSION_NUMBER_BUILD% >> %LOG_FILE% 2>&1
 
+call :log * Generating components context file ...
+set "SETUP_COMPONENTS_GENERATOR_SCRIPT_FILE=%SETUP_OUTPUT_DIR%\tools\components\dreamsdk-components-context-generator.iss"
+set "SETUP_COMPONENTS_GENERATOR_EXE_FILE=%SETUP_COMPONENTS_GENERATOR_SCRIPT_FILE:.iss=.exe%"
+set "SETUP_COMPONENTS_CONTEXT_FILE=%SETUP_CONFIG_OUTPUT_DIR%\components.context.iss"
+%ISCC% /F %SETUP_COMPONENTS_GENERATOR_SCRIPT_FILE% >> %LOG_FILE% 2>&1
+%SETUP_COMPONENTS_GENERATOR_EXE_FILE%
+if not exist %SETUP_COMPONENTS_CONTEXT_FILE% goto err_components_context_not_generated
+
 :finish
 call :log
 call :log Done!
@@ -447,6 +459,11 @@ call :err UPX was not found.
 call :log File: "%UPXPACK%"
 goto end
 
+:err_binary_iscc
+call :err Inno Setup Compiler was not found.
+call :log File: "%ISCC%"
+goto end
+
 :err_binary_dualsign
 call :err DualSign utility was not found.
 call :log File: "%DUALSIGN%"
@@ -459,6 +476,11 @@ goto end
 :err_hhc_missing
 call :err Missing Microsoft HTML Help Workshop. Please install it.
 call :log Please read the "documentation" repository for more information.
+goto end
+
+:err_components_context_not_generated
+call :err Unable to generate Components context script file.
+call :log File: "%SETUP_COMPONENTS_CONTEXT_FILE%"
 goto end
 
 rem ## Utilities ###############################################################
