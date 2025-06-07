@@ -66,6 +66,7 @@ set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
 set MKCFGGDB="%PYTHON%" "%BASE_DIR%\data\mkcfggdb.py"
 set MKCFGTOOLCHAINS="%PYTHON%" "%BASE_DIR%\data\mkcfgtoolchains.py"
 set MKCONFIG="%PYTHON%" "%BASE_DIR%\data\mkconfig.py"
+set MKDIRTREE="%PYTHON%" "%BASE_DIR%\data\mkdirtree.py"
 set MKVERSION="%PYTHON%" "%BASE_DIR%\data\mkversion.py"
 set VERSIONUPDATER="%PYTHON%" "%BASE_DIR%\data\versionupdater.py"
 set DUALSIGN="%SETUP_OUTPUT_DIR%\tools\dualsign\dualsign.cmd"
@@ -403,9 +404,11 @@ call :log * Generating version context file ...
 
 call :log * Generating components context file ...
 set "SETUP_COMPONENTS_GENERATOR_PATH=%SETUP_OUTPUT_DIR%\tools\components"
+set "SETUP_COMPONENTS_GENERATOR_FAKE_SOURCES_PATH=%SETUP_COMPONENTS_GENERATOR_PATH%\.sources-fake"
 set "SETUP_COMPONENTS_GENERATOR_SCRIPT_FILE=%SETUP_COMPONENTS_GENERATOR_PATH%\dreamsdk-components-context-generator.iss"
 set "SETUP_COMPONENTS_GENERATOR_EXE_FILE=%SETUP_COMPONENTS_GENERATOR_SCRIPT_FILE:.iss=.exe%"
 set "SETUP_COMPONENTS_CONTEXT_FILE=%SETUP_CONFIG_OUTPUT_DIR%\components.context.iss"
+%MKDIRTREE% %OUTPUT_DIR% %SETUP_COMPONENTS_GENERATOR_FAKE_SOURCES_PATH% >> %LOG_FILE% 2>&1
 %ISCC% /F %SETUP_COMPONENTS_GENERATOR_SCRIPT_FILE% >> %LOG_FILE% 2>&1
 if exist %SETUP_COMPONENTS_CONTEXT_FILE% del %SETUP_COMPONENTS_CONTEXT_FILE%
 pushd %SETUP_COMPONENTS_GENERATOR_PATH%
