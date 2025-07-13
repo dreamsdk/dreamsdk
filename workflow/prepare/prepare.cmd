@@ -416,6 +416,18 @@ pushd %SETUP_COMPONENTS_GENERATOR_PATH%
 popd
 if not exist %SETUP_COMPONENTS_CONTEXT_FILE% goto err_components_context_not_generated
 
+:generating_sources_dev
+call :log * Generating sources development directory...
+set "DEV_OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.sources-dev"
+set "DREAMSDK_VERSION_DIR=dreamsdk-objects\opt\dreamsdk"
+set "DREAMSDK_VERSION_FILE=%DREAMSDK_VERSION_DIR%\VERSION"
+set "DREAMSDK_INPUT_VERSION_FILE=%OUTPUT_DIR%\%DREAMSDK_VERSION_FILE%"
+set "DREAMSDK_OUTPUT_VERSION_FILE=%DEV_OUTPUT_DIR%\%DREAMSDK_VERSION_FILE%"
+mkdir %DEV_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+%MKDIRTREE% %OUTPUT_DIR% %DEV_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+mkdir "%DEV_OUTPUT_DIR%\%DREAMSDK_VERSION_DIR%" >> %LOG_FILE% 2>&1
+copy %DREAMSDK_INPUT_VERSION_FILE% %DREAMSDK_OUTPUT_VERSION_FILE% >> %LOG_FILE% 2>&1
+
 :finish
 call :log
 call :log Done!
