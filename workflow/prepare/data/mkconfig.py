@@ -4,7 +4,7 @@ INI to CONF Configuration Generator
 Usage: python script.py <config_ini_path> <input32_path> <input64_path> <output32_path> <output64_path> <7z_path>
 
 This script reads an INI configuration file and scans directories for 7z packages
-to generate separate .conf files for 32-bit and 64-bit architectures with checksums.
+to generate separate .conf files for 32-bit and 64-bit architectures with checksums and architecture detection.
 """
 
 import sys
@@ -15,6 +15,7 @@ import hashlib
 import re
 import tempfile
 import shutil
+import struct
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import subprocess
@@ -65,6 +66,53 @@ def sort_toolchain_profiles(profile_names):
     # Add the rest in their original order
     result.extend(remaining)
     return result
+
+def detect_pe_architecture(exe_path: str) -> Optional[str]:
+    """
+    Detect the architecture of a PE (Portable Executable) file.
+    Returns '32' for 32-bit, '64' for 64-bit, or None if detection fails.
+    """
+    try:
+        with open(exe_path, 'rb') as f:
+            # Read DOS header
+            dos_header = f.read(64)
+            if len(dos_header) < 64 or dos_header[:2] != b'MZ':
+                return None
+            
+            # Get PE header offset
+            pe_offset = struct.unpack('<I', dos_header[60:64])[0]
+            
+            # Seek to PE header
+            f.seek(pe_offset)
+            pe_signature = f.read(4)
+            
+            if pe_signature != b'PE\x00\x00':
+                return None
+            
+            # Read COFF header
+            coff_header = f.read(20)
+            if len(coff_header) < 20:
+                return None
+            
+            # Extract machine type from COFF header
+            machine_type = struct.unpack('<H', coff_header[0:2])[0]
+            
+            # Machine type constants
+            IMAGE_FILE_MACHINE_I386 = 0x014c    # 32-bit Intel
+            IMAGE_FILE_MACHINE_AMD64 = 0x8664   # 64-bit AMD/Intel
+            IMAGE_FILE_MACHINE_IA64 = 0x0200    # 64-bit Intel Itanium
+            
+            if machine_type == IMAGE_FILE_MACHINE_I386:
+                return '32'
+            elif machine_type in (IMAGE_FILE_MACHINE_AMD64, IMAGE_FILE_MACHINE_IA64):
+                return '64'
+            else:
+                # Unknown architecture
+                return None
+                
+    except Exception as e:
+        print(f"Warning: Could not detect architecture for {exe_path}: {e}")
+        return None
 
 def extract_python_version_from_filename(filename: str) -> Optional[str]:
     """Extract Python version from GDB package filename."""
@@ -138,8 +186,8 @@ def get_gcc_version_from_archive(archive_path: str, sevenzip_path: str) -> Optio
     
     return None
 
-def extract_7z_and_get_checksum(archive_path: str, target_executable: str, sevenzip_path: str) -> Optional[str]:
-    """Extract 7z archive and calculate checksum of target executable."""
+def extract_7z_and_get_info(archive_path: str, target_executable: str, sevenzip_path: str) -> Tuple[Optional[str], Optional[str]]:
+    """Extract 7z archive and get checksum and architecture of target executable."""
     try:
         # Create temporary directory
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -150,21 +198,27 @@ def extract_7z_and_get_checksum(archive_path: str, target_executable: str, seven
             
             if result.returncode != 0:
                 print(f"Warning: Failed to extract {archive_path}")
-                return None
+                return None, None
             
             # Look for the target executable
             executable_path = os.path.join(temp_dir, 'sh-elf', 'bin', target_executable)
+            if not os.path.exists(executable_path):
+                # Try alternative path for ARM EABI
+                executable_path = os.path.join(temp_dir, 'arm-eabi', 'bin', target_executable.replace('sh-elf-', 'arm-eabi-'))
+            
             if os.path.exists(executable_path):
-                return calculate_md5_checksum(executable_path)
+                checksum = calculate_md5_checksum(executable_path)
+                architecture = detect_pe_architecture(executable_path)
+                return checksum, architecture
             else:
                 print(f"Warning: Executable {target_executable} not found in {archive_path}")
-                return None
+                return None, None
                 
     except Exception as e:
         print(f"Error processing {archive_path}: {e}")
-        return None
+        return None, None
 
-def scan_directory_for_packages(directory: str, architecture: str, sevenzip_path: str) -> Dict[str, Dict]:
+def scan_directory_for_packages(directory: str, expected_architecture: str, sevenzip_path: str) -> Dict[str, Dict]:
     """Scan directory for 7z packages and collect information."""
     logger = logging.getLogger(__name__)
     
@@ -177,7 +231,7 @@ def scan_directory_for_packages(directory: str, architecture: str, sevenzip_path
         print(f"Warning: Directory {directory} does not exist")
         return packages_info
     
-    print(f"Scanning directory for {architecture}-bit: {directory}")
+    print(f"Scanning directory for {expected_architecture}-bit: {directory}")
     
     for filename in os.listdir(directory):
         if not filename.endswith('.7z'):
@@ -191,37 +245,47 @@ def scan_directory_for_packages(directory: str, architecture: str, sevenzip_path
             python_version = extract_python_version_from_filename(filename)
             if python_version:
                 print(f"Processing GDB package: {filename} (Python {python_version})")
-                checksum = extract_7z_and_get_checksum(full_path, 'sh-elf-gdb.exe', sevenzip_path)
+                checksum, architecture = extract_7z_and_get_info(full_path, 'sh-elf-gdb.exe', sevenzip_path)
                 profile_name = python_version_to_profile_name(python_version)
+                
+                # Validate architecture
+                if architecture and architecture != expected_architecture:
+                    print(f"Warning: Architecture mismatch for {filename}: detected {architecture}-bit, expected {expected_architecture}-bit")
                 
                 packages_info['gdb_packages'][profile_name] = {
                     'filename': filename,
                     'checksum': checksum or 'unknown',
+                    'architecture': architecture or expected_architecture,
                     'python_version': python_version,
                     'package_name': filename.replace('-bin.7z', ''),
-                    'architecture': architecture
+                    'expected_architecture': expected_architecture
                 }
             else:
                 print(f"Skipping GDB package (no Python version detected): {filename}")
         
-        # Process toolchain packages - amélioration de la détection
+        # Process toolchain packages - improved detection
         elif filename.startswith('sh-elf-') and not filename.startswith('sh-elf-gdb-'):
             print(f"Processing potential toolchain package: {filename}")
             
-            # Try to extract and get checksum
-            checksum = extract_7z_and_get_checksum(full_path, 'sh-elf-gcc.exe', sevenzip_path)
+            # Try to extract and get info
+            checksum, architecture = extract_7z_and_get_info(full_path, 'sh-elf-gcc.exe', sevenzip_path)
             
             if checksum and checksum != 'unknown':
                 # Get GCC version from the archive
                 gcc_version = get_gcc_version_from_archive(full_path, sevenzip_path)
                 
+                # Validate architecture
+                if architecture and architecture != expected_architecture:
+                    print(f"Warning: Architecture mismatch for {filename}: detected {architecture}-bit, expected {expected_architecture}-bit")
+                
                 packages_info['toolchain_packages'][filename] = {
                     'filename': filename,
                     'checksum': checksum,
+                    'architecture': architecture or expected_architecture,
                     'gcc_version': gcc_version,
-                    'architecture': architecture
+                    'expected_architecture': expected_architecture
                 }
-                print(f"Successfully processed toolchain package: {filename} (GCC {gcc_version})")
+                print(f"Successfully processed toolchain package: {filename} (GCC {gcc_version}, {architecture or expected_architecture}-bit)")
             else:
                 print(f"Failed to process toolchain package: {filename} (checksum calculation failed)")
         
@@ -232,19 +296,24 @@ def scan_directory_for_packages(directory: str, architecture: str, sevenzip_path
               not filename.startswith('sh-elf-gdb')):
             print(f"Processing alternative toolchain package pattern: {filename}")
             
-            # Try to extract and get checksum
-            checksum = extract_7z_and_get_checksum(full_path, 'sh-elf-gcc.exe', sevenzip_path)
+            # Try to extract and get info
+            checksum, architecture = extract_7z_and_get_info(full_path, 'sh-elf-gcc.exe', sevenzip_path)
             
             if checksum and checksum != 'unknown':
                 gcc_version = get_gcc_version_from_archive(full_path, sevenzip_path)
                 
+                # Validate architecture
+                if architecture and architecture != expected_architecture:
+                    print(f"Warning: Architecture mismatch for {filename}: detected {architecture}-bit, expected {expected_architecture}-bit")
+                
                 packages_info['toolchain_packages'][filename] = {
                     'filename': filename,
                     'checksum': checksum,
+                    'architecture': architecture or expected_architecture,
                     'gcc_version': gcc_version,
-                    'architecture': architecture
+                    'expected_architecture': expected_architecture
                 }
-                print(f"Successfully processed alternative toolchain package: {filename} (GCC {gcc_version})")
+                print(f"Successfully processed alternative toolchain package: {filename} (GCC {gcc_version}, {architecture or expected_architecture}-bit)")
             else:
                 print(f"Failed to process alternative toolchain package: {filename}")
         else:
@@ -252,7 +321,7 @@ def scan_directory_for_packages(directory: str, architecture: str, sevenzip_path
     
     logger.debug(f"Found {len(packages_info['toolchain_packages'])} toolchain packages:")
     for filename, info in packages_info['toolchain_packages'].items():
-        logger.debug(f"  - {filename}: GCC {info['gcc_version']}, checksum: {info['checksum'][:8]}...")
+        logger.debug(f"  - {filename}: GCC {info['gcc_version']}, {info['architecture']}-bit, checksum: {info['checksum'][:8]}...")
     
     return packages_info
     
@@ -319,7 +388,7 @@ def extract_toolchain_profiles_from_ini(ini_data: Dict, architecture: str) -> Di
         version = version.strip()
         profile_info = {}
         
-        # Get name (utilise la casse exacte du fichier INI)
+        # Get name (use exact case from INI file)
         name_key = f"TOOLCHAINS{architecture}_VERSION_NAME_{version}"
         if name_key in arch_section:
             profile_info['name'] = arch_section[name_key]
@@ -352,12 +421,13 @@ def extract_toolchain_profiles_from_ini(ini_data: Dict, architecture: str) -> Di
     
     return profiles
 
-def match_toolchain_checksums_and_versions(toolchain_profiles: Dict, scanned_packages: Dict) -> Tuple[Dict, Dict, Dict]:
-    """Match toolchain profiles with their checksums and versions from scanned packages."""
+def match_toolchain_checksums_and_versions(toolchain_profiles: Dict, scanned_packages: Dict) -> Tuple[Dict, Dict, Dict, Dict]:
+    """Match toolchain profiles with their checksums, versions, and architectures from scanned packages."""
     logger = logging.getLogger(__name__)
     
     checksum_map = {}
     version_map = {}
+    architecture_map = {}
     package_name_map = {}  # Maps profile_id to actual package names
     
     logger.debug(f"Matching toolchain profiles with scanned packages...")
@@ -441,6 +511,10 @@ def match_toolchain_checksums_and_versions(toolchain_profiles: Dict, scanned_pac
                 version_map[profile_id] = package_info['gcc_version']
                 logger.debug(f"Added version mapping: {profile_id} -> {package_info['gcc_version']}")
             
+            # Store architecture mapping
+            architecture_map[profile_id] = package_info['architecture']
+            logger.debug(f"Added architecture mapping: {profile_id} -> {package_info['architecture']}")
+            
             # Store actual package names based on the found files
             sh_elf_name = package_name
             # Generate ARM EABI name by replacing sh-elf-toolchain with arm-eabi-toolchain
@@ -468,8 +542,9 @@ def match_toolchain_checksums_and_versions(toolchain_profiles: Dict, scanned_pac
     
     logger.debug(f"Final checksum_map: {checksum_map}")
     logger.debug(f"Final version_map: {version_map}")
+    logger.debug(f"Final architecture_map: {architecture_map}")
     logger.debug(f"Final package_name_map: {package_name_map}")
-    return checksum_map, version_map, package_name_map
+    return checksum_map, version_map, architecture_map, package_name_map
 
 def generate_conf_file(ini_data: Dict, packages_info: Dict, architecture: str) -> str:
     """Generate .conf file content for specific architecture."""
@@ -497,8 +572,8 @@ def generate_conf_file(ini_data: Dict, packages_info: Dict, architecture: str) -
     
     conf_lines.append("")
     
-    # Get toolchain checksums, versions, and actual package names
-    toolchain_checksums, toolchain_versions, package_names = match_toolchain_checksums_and_versions(toolchain_profiles, packages_info)
+    # Get toolchain checksums, versions, architectures, and actual package names
+    toolchain_checksums, toolchain_versions, toolchain_architectures, package_names = match_toolchain_checksums_and_versions(toolchain_profiles, packages_info)
     
     # Toolchain Profile sections
     for profile_id, profile_info in toolchain_profiles.items():
@@ -521,6 +596,13 @@ def generate_conf_file(ini_data: Dict, packages_info: Dict, architecture: str) -
         
         if 'description' in profile_info:
             conf_lines.append(f"Description={profile_info['description']}")
+        
+        # Add architecture information
+        if profile_id in toolchain_architectures:
+            conf_lines.append(f"Architecture={toolchain_architectures[profile_id]}")
+        else:
+            # Fallback to expected architecture
+            conf_lines.append(f"Architecture={architecture}")
         
         # Use actual package names if available, otherwise use INI values
         if profile_id in package_names:
@@ -553,6 +635,10 @@ def generate_conf_file(ini_data: Dict, packages_info: Dict, architecture: str) -
                 gdb_version = ini_data['Toolchains'][gdb_key]
         
         conf_lines.append(f"Version={gdb_version}")
+        
+        # Add architecture information
+        conf_lines.append(f"Architecture={gdb_info['architecture']}")
+        
         conf_lines.append(f"GdbPackage={gdb_info['package_name']}-bin.7z")
         conf_lines.append("")
     
