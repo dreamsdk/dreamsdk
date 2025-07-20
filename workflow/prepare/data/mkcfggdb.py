@@ -4,6 +4,69 @@
 import sys
 import os
 import re
+import subprocess
+
+def get_7z_uncompressed_size(seven_zip_path, archive_path):
+    """
+    Get the uncompressed size of a 7z archive using 7z command line tool.
+    
+    Args:
+        seven_zip_path (str): Path to 7z.exe
+        archive_path (str): Path to the 7z archive
+        
+    Returns:
+        int: Uncompressed size in bytes, or 0 if error
+    """
+    try:
+        # Check if archive exists
+        if not os.path.exists(archive_path):
+            return 0
+        
+        # Run 7z list command
+        result = subprocess.run([seven_zip_path, 'l', archive_path], 
+                               capture_output=True, text=True, encoding='utf-8')
+        
+        if result.returncode != 0:
+            return 0
+        
+        # Parse the output to find the total uncompressed size
+        # Look for the last line with the format: "date time size compressed_size files folders"
+        lines = result.stdout.strip().split('\n')        
+        for line in reversed(lines):
+            # Look for the summary line that contains file/folder counts
+            if 'files' in line and 'folders' in line:
+                # Extract numbers from the line
+                numbers = re.findall(r'\d+', line)                
+                if len(numbers) >= 2:
+                    # The 6th number should be the uncompressed size
+                    return int(numbers[6])
+        
+        return 0
+        
+    except Exception as e:
+        print(f"Warning: Failed to get size for {archive_path}: {str(e)}")
+        return 0
+
+def calculate_package_size(seven_zip_path, packages_path, pkg_version):
+    """
+    Calculate the size of a package by reading its 7z archive.
+    
+    Args:
+        seven_zip_path (str): Path to 7z.exe
+        packages_path (str): Path to the directory containing 7z packages
+        pkg_version (str): version
+        
+    Returns:
+        int: Package size in bytes, or 0 if not found/error
+    """    
+    # Construct the full path to the 7z file
+    if not pkg_version:
+        pkg_name = "no-python"
+    else:
+        pkg_name = f"python-{pkg_version}"
+    archive_path = os.path.join(packages_path, f"sh-elf-gdb-{pkg_name}-bin.7z")
+    
+    return get_7z_uncompressed_size(seven_zip_path, archive_path)
 
 def scan_packages(base_path):
     """
@@ -194,13 +257,15 @@ def generate_file_entries(packages, arch):
     
     return content
 
-def generate_component_entries(packages, arch):
+def generate_component_entries(seven_zip_path, packages, arch, packages_path):
     """
     Generate the [Components] section entries for the specified architecture.
     
     Args:
+        seven_zip_path (str): Path to 7z.exe    
         packages (list): List of packages (name, version) tuples
         arch (str): Architecture type ('32' or '64')
+        packages_path (str): Path where are located binary packages for GDB
         
     Returns:
         str: Component entries as text
@@ -211,18 +276,19 @@ def generate_component_entries(packages, arch):
     
     for pkg_name, pkg_version in packages:
         formatted_version = get_formatted_python_version(pkg_version)
+        pkg_total_size = calculate_package_size(seven_zip_path, packages_path, pkg_version)        
         if pkg_version:
             content += f'Name: "main\\gdb\\{arch}\\python{formatted_version}"; '
-            content += f'Description: "{{cm:GdbPython_{formatted_version}}}"; '
-            content += f'Flags: exclusive fixed\n'
+            content += f'Description: "{{cm:GdbPython_{formatted_version}}}"; '            
         else:
             content += f'Name: "main\\gdb\\{arch}\\nopython"; '
             content += f'Description: "{{cm:GdbPython_None}}"; '
-            content += f'Flags: exclusive fixed\n'
+        content += f'ExtraDiskSpaceRequired: {pkg_total_size}; '
+        content += f'Flags: exclusive fixed\n'
     
     return content
 
-def generate_gdb_config(version_32bit, version_64bit, path_32bit, path_64bit):
+def generate_gdb_config(version_32bit, version_64bit, path_32bit, path_64bit, seven_zip_path):
     """
     Generate GDB configuration file based on versions and packages found in the specified paths.
     
@@ -231,6 +297,7 @@ def generate_gdb_config(version_32bit, version_64bit, path_32bit, path_64bit):
         version_64bit (str): Version for GDB 64-bit (e.g., "16.2")
         path_32bit (str): Path to 32-bit packages directory
         path_64bit (str): Path to 64-bit packages directory
+        seven_zip_path (str): Path to 7z.exe        
         
     Returns:
         str: Generated configuration file content
@@ -244,18 +311,18 @@ def generate_gdb_config(version_32bit, version_64bit, path_32bit, path_64bit):
     current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     # Header
-    content = """; =============================================================================
-;  ____                         _____  ____   _____
-; |    .  ___  ___  ___  _____ |   __||    . |  |  |
-; |  |  ||  _|| -_|| .'||     ||__   ||  |  ||    -|
-; |____/ |_|  |___||__,||_|_|_||_____||____/ |__|__|
-;
-; =============================================================================
-; DreamSDK Setup - GDB Configuration
-; =============================================================================
-;
-; THIS FILE HAS BEEN GENERATED ON """ + current_datetime + """.
-; PLEASE DON'T UPDATE IT.
+    content = """// =============================================================================
+//  ____                         _____  ____   _____
+// |    .  ___  ___  ___  _____ |   __||    . |  |  |
+// |  |  ||  _|| -_|| .'||     ||__   ||  |  ||    -|
+// |____/ |_|  |___||__,||_|_|_||_____||____/ |__|__|
+//
+// =============================================================================
+// DreamSDK Setup - GDB Configuration
+// =============================================================================
+//
+// THIS FILE HAS BEEN GENERATED ON """ + current_datetime + """.
+// PLEASE DON'T UPDATE IT.
 
 """
 
@@ -296,8 +363,8 @@ def generate_gdb_config(version_32bit, version_64bit, path_32bit, path_64bit):
     content += "[Components]\n"
     
     # Component entries
-    for arch, packages in [("32", packages_32bit), ("64", packages_64bit)]:
-        content += generate_component_entries(packages, arch)
+    for arch, packages, packages_path in [("32", packages_32bit, path_32bit), ("64", packages_64bit, path_64bit)]:
+        content += generate_component_entries(seven_zip_path, packages, arch, packages_path)
         if arch == "32":  # Add extra newline between 32-bit and 64-bit components
             content += "\n"
     
@@ -307,9 +374,9 @@ def main():
     """
     Main function that processes command line arguments and generates the file.
     """
-    if len(sys.argv) != 6:
-        print("Usage: python mkcfggdb.py <output_path> <32bit_version> <64bit_version> <32bit_path> <64bit_path>")
-        print("Example: python mkcfggdb.py /path/to/output 10.2 16.2 /path/to/32bit /path/to/64bit")
+    if len(sys.argv) != 7:
+        print("Usage: python mkcfggdb.py <output_path> <32bit_version> <64bit_version> <32bit_path> <64bit_path> <7z_path>")
+        print("Example: python mkcfggdb.py /path/to/output 10.2 16.2 /path/to/32bit /path/to/64bit /path/to/7z.exe")
         sys.exit(1)
 
     path_output = sys.argv[1]        
@@ -317,9 +384,14 @@ def main():
     version_64bit = sys.argv[3]
     path_32bit = sys.argv[4]
     path_64bit = sys.argv[5]
+    seven_zip_path = sys.argv[6]
+    
+    if not os.path.exists(seven_zip_path):
+        print(f"Error: 7-Zip executable {seven_zip_path} does not exist")
+        sys.exit(1)    
     
     # Generate content
-    content = generate_gdb_config(version_32bit, version_64bit, path_32bit, path_64bit)
+    content = generate_gdb_config(version_32bit, version_64bit, path_32bit, path_64bit, seven_zip_path)
     
     # Write to output file    
     full_output_path = os.path.join(path_output, 'gdb.context.iss')
