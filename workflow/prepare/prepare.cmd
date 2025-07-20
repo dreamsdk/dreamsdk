@@ -430,9 +430,9 @@ mkdir "%DEV_OUTPUT_DIR%\%DREAMSDK_VERSION_DIR%" >> %LOG_FILE% 2>&1
 copy %DREAMSDK_INPUT_VERSION_FILE% %DREAMSDK_OUTPUT_VERSION_FILE% >> %LOG_FILE% 2>&1
 
 :finish
-call :log
-call :log Done!
-call :log
+call :log =============================================================================
+call :log Process terminated.
+call :log =============================================================================
 
 :end
 popd
