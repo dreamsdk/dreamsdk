@@ -10,7 +10,9 @@ set BASE_DIR=%BASE_DIR:~0,-1%
 set LOG_FILE=%BASE_DIR%\mksetup.log
 if exist %LOG_FILE% del %LOG_FILE%
 
+call :log =============================================================================
 call :log %APP_TITLE%
+call :log =============================================================================
 call :log
 
 :init
@@ -18,7 +20,8 @@ rem Global boolean variable used in various locations
 set FUNC_RESULT=0
 
 rem Read Configuration
-set CONFIG_FILE=%BASE_DIR%\mksetup.ini
+set "CONFIG_FILE=%BASE_DIR%\mksetup.ini"
+if not exist "%CONFIG_FILE%" set "CONFIG_FILE=%BASE_DIR%\mksetup.default.ini"
 if not exist "%CONFIG_FILE%" goto err_config
 for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   set %%i 2> nul
@@ -67,7 +70,9 @@ if "+%FUNC_RESULT%"=="+0" goto err_output_generation
 
 :finish
 call :log
-call :log Done!
+call :log =============================================================================
+call :log Process terminated.
+call :log =============================================================================
 call :log
 goto end
 
