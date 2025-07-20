@@ -10,7 +10,9 @@ set BASE_DIR=%BASE_DIR:~0,-1%
 set LOG_FILE=%BASE_DIR%\offline.log
 if exist %LOG_FILE% del %LOG_FILE%
 
+call :log =============================================================================
 call :log %APP_TITLE%
+call :log =============================================================================
 call :log
 
 :init
@@ -18,7 +20,8 @@ rem Check if DreamSDK is installed (of course, you can use a previous version!)
 if "$%DREAMSDK_HOME%"=="$" goto err_dreamsdk_missing
 
 rem Read Configuration
-set CONFIG_FILE=%BASE_DIR%\offline.ini
+set "CONFIG_FILE=%BASE_DIR%\offline.ini"
+if not exist "%CONFIG_FILE%" set "CONFIG_FILE=%BASE_DIR%\offline.default.ini"
 if not exist "%CONFIG_FILE%" goto err_config
 for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   set %%i 2> nul
@@ -160,9 +163,9 @@ call :copy %DCLOAD_SER_INPUT_DIR% %DCLOAD_SER_OUTPUT_DIR% %VERSION_DCLOAD_SERIAL
 call :packsrc dcload-serial %DCLOAD_SER_OUTPUT_DIR%
 
 :finish
-call :log
-call :log Done!
-call :log
+call :log =============================================================================
+call :log Process terminated.
+call :log =============================================================================
 goto end
 
 :end
