@@ -163,9 +163,11 @@ call :copy %DCLOAD_SER_INPUT_DIR% %DCLOAD_SER_OUTPUT_DIR% %VERSION_DCLOAD_SERIAL
 call :packsrc dcload-serial %DCLOAD_SER_OUTPUT_DIR%
 
 :finish
+call :log
 call :log =============================================================================
 call :log Process terminated.
 call :log =============================================================================
+call :log
 goto end
 
 :end
