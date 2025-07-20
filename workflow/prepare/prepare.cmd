@@ -393,7 +393,7 @@ call :log Generating runtime configuration for packages ...
 
 :processing_wrappers
 call :log Generating wrappers packages ...
-set "KOS_INPUT_DIR=%OUTPUT_DIR%\lib-embedded\kos"
+set "KOS_INPUT_DIR=%OUTPUT_DIR%\lib-embedded\lib\kos"
 set "DREAMSDK_RUNNER_BIN32_FILE=%BIN_OUTPUT_DIR%\dreamsdk-runner.exe"
 set "DREAMSDK_RUNNER_BIN64_FILE=%BIN64_OUTPUT_DIR%\dreamsdk-runner.exe"
 %MKWRAPPERS% %KOS_INPUT_DIR% %DREAMSDK_RUNNER_BIN32_FILE% %SEVENZIP% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
