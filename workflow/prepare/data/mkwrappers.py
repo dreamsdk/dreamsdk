@@ -99,7 +99,7 @@ def process_wrapper_files(input_kos_path, dreamsdk_runner, sevenzip_path, output
     # Process dc-arm files (arm-eabi archive)
     if dc_arm_files:
         with tempfile.TemporaryDirectory() as temp_dir:
-            arm_eabi_dir = Path(temp_dir) / "arm-eabi"
+            arm_eabi_dir = Path(temp_dir) / "arm-eabi/bin"
             arm_eabi_dir.mkdir(parents=True, exist_ok=True)
             
             for filename in dc_arm_files:
@@ -121,7 +121,7 @@ def process_wrapper_files(input_kos_path, dreamsdk_runner, sevenzip_path, output
     # Process kos files (sh-elf archive)
     if kos_files:
         with tempfile.TemporaryDirectory() as temp_dir:
-            sh_elf_dir = Path(temp_dir) / "sh-elf"
+            sh_elf_dir = Path(temp_dir) / "sh-elf/bin"
             sh_elf_dir.mkdir(parents=True, exist_ok=True)
             
             for filename in kos_files:
