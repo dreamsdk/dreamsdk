@@ -68,6 +68,7 @@ set MKCFGTOOLCHAINS="%PYTHON%" "%BASE_DIR%\data\mkcfgtoolchains.py"
 set MKCONFIG="%PYTHON%" "%BASE_DIR%\data\mkconfig.py"
 set MKDIRTREE="%PYTHON%" "%BASE_DIR%\data\mkdirtree.py"
 set MKVERSION="%PYTHON%" "%BASE_DIR%\data\mkversion.py"
+set MKWRAPPERS="%PYTHON%" "%BASE_DIR%\data\mkwrappers.py"
 set VERSIONUPDATER="%PYTHON%" "%BASE_DIR%\data\versionupdater.py"
 set DUALSIGN="%SETUP_OUTPUT_DIR%\tools\dualsign\dualsign.cmd"
 set WGET="%DREAMSDK_HOME%\msys\1.0\bin\wget.exe"
@@ -390,14 +391,22 @@ call :processgdb 64 %GDB64_VERSION%
 call :log Generating runtime configuration for packages ...
 %MKCONFIG% %PACKAGES_CONFIG_FILE% %BIN_PACKAGES_OUTPUT_DIR% %BIN64_PACKAGES_OUTPUT_DIR% %DREAMSDK_RUNTIME_PACKAGES_FILE32% %DREAMSDK_RUNTIME_PACKAGES_FILE64% %SEVENZIP% >> %LOG_FILE% 2>&1
 
+:processing_wrappers
+call :log Generating wrappers packages ...
+set "KOS_INPUT_DIR=%OUTPUT_DIR%\lib-embedded\lib\kos"
+set "DREAMSDK_RUNNER_BIN32_FILE=%BIN_OUTPUT_DIR%\dreamsdk-runner.exe"
+set "DREAMSDK_RUNNER_BIN64_FILE=%BIN64_OUTPUT_DIR%\dreamsdk-runner.exe"
+%MKWRAPPERS% %KOS_INPUT_DIR% %DREAMSDK_RUNNER_BIN32_FILE% %SEVENZIP% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+%MKWRAPPERS% %KOS_INPUT_DIR% %DREAMSDK_RUNNER_BIN64_FILE% %SEVENZIP% %BIN64_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+
 :processing_inno_setup
 call :log Generating Inno Setup context files ...
 
 call :log * Generating GDB context file ...
-%MKCFGGDB% %SETUP_CONFIG_OUTPUT_DIR% %GDB32_VERSION% %GDB64_VERSION% %BIN_PACKAGES_OUTPUT_DIR% %BIN64_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+%MKCFGGDB% %SETUP_CONFIG_OUTPUT_DIR% %GDB32_VERSION% %GDB64_VERSION% %BIN_PACKAGES_OUTPUT_DIR% %BIN64_PACKAGES_OUTPUT_DIR% %SEVENZIP% >> %LOG_FILE% 2>&1
 
 call :log * Generating toolchains context file ...
-%MKCFGTOOLCHAINS% %SETUP_CONFIG_OUTPUT_DIR% %PACKAGES_CONFIG_FILE% >> %LOG_FILE% 2>&1
+%MKCFGTOOLCHAINS% %SETUP_CONFIG_OUTPUT_DIR% %PACKAGES_CONFIG_FILE% %BIN_PACKAGES_OUTPUT_DIR% %BIN64_PACKAGES_OUTPUT_DIR% %SEVENZIP% >> %LOG_FILE% 2>&1
 
 call :log * Generating version context file ...
 %MKVERSION% %SETUP_CONFIG_OUTPUT_DIR% %VERSION_NUMBER_MAJOR% %VERSION_NUMBER_MINOR% %VERSION_NUMBER_BUILD% >> %LOG_FILE% 2>&1
@@ -431,7 +440,9 @@ copy %DREAMSDK_INPUT_VERSION_FILE% %DREAMSDK_OUTPUT_VERSION_FILE% >> %LOG_FILE% 
 
 :finish
 call :log
-call :log Done!
+call :log =============================================================================
+call :log Process terminated.
+call :log =============================================================================
 call :log
 
 :end
