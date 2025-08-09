@@ -33,9 +33,19 @@ def generate_full_version(base_version: str) -> str:
     
     return f"{base_version}.{yymm}"
 
+def generate_copyright() -> str:
+    """
+    Generates the copyright string with current year
+    
+    Returns:
+        str: Copyright string in format "© Copyleft 2018-YYYY"
+    """
+    current_year = datetime.now().year
+    return f"© Copyleft 2018-{current_year}"
+
 def update_product_version(lpi_path: str, base_version: str) -> bool:
     """
-    Updates the ProductVersion in a Lazarus Project Information (.lpi) file
+    Updates the ProductVersion and LegalCopyright in a Lazarus Project Information (.lpi) file
     
     Args:
         lpi_path: Path to the .lpi file
@@ -51,6 +61,10 @@ def update_product_version(lpi_path: str, base_version: str) -> bool:
     # Generate the full version with current YYMM
     full_version = generate_full_version(base_version)
     print(f"Generated full version: {full_version}")
+    
+    # Generate the copyright string
+    copyright_text = generate_copyright()
+    print(f"Generated copyright: {copyright_text}")
 
     full_path = os.path.abspath(lpi_path)
 
@@ -71,9 +85,17 @@ def update_product_version(lpi_path: str, base_version: str) -> bool:
         string_table = root.find(".//ProjectOptions/VersionInfo/StringTable")
         
         if string_table is not None:
+            # Update ProductVersion
             string_table.set("ProductVersion", full_version)
+            print(f"Success: ProductVersion updated to {full_version}")
+            
+            # Update LegalCopyright
+            string_table.set("LegalCopyright", copyright_text)
+            print(f"Success: LegalCopyright updated to {copyright_text}")
+            
+            # Write the changes to file
             tree.write(full_path, encoding="utf-8", xml_declaration=True, short_empty_elements=True)
-            print(f"Success: ProductVersion updated to {full_version} in {full_path}")
+            print(f"File successfully updated: {full_path}")
             return True
         else:
             print(f"Error: StringTable not found in path ProjectOptions/VersionInfo/StringTable in {full_path}")
@@ -91,14 +113,16 @@ def main():
     Main function to handle command line arguments and execute version update
     """
     parser = argparse.ArgumentParser(
-        description="Update ProductVersion in Lazarus Project Information (.lpi) files",
+        description="Update ProductVersion and LegalCopyright in Lazarus Project Information (.lpi) files",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   python version.py project.lpi 1.0.0
   python version.py /path/to/project.lpi 2.1.3
   
-The script will automatically append .YYMM based on current date (e.g., 1.0.0.2505)
+The script will automatically:
+- Append .YYMM to version based on current date (e.g., 1.0.0.2508)
+- Set LegalCopyright to "© Copyleft 2018-YYYY" where YYYY is current year
         """
     )
     
@@ -114,7 +138,7 @@ The script will automatically append .YYMM based on current date (e.g., 1.0.0.25
     
     args = parser.parse_args()
     
-    # Update the version
+    # Update the version and copyright
     success = update_product_version(args.lpi_file, args.version)
     
     # Exit with appropriate code
