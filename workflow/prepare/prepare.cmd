@@ -297,9 +297,9 @@ if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_help64
 call :log Copying Help (x64)...
-set HELP_INPUT_FILE=%DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm
-%HHC% "%DOCUMENTATION_INPUT_DIR%\src\dreamsdk.hhp" >> %LOG_FILE% 2>&1
-copy /B %HELP_INPUT_FILE% %BIN64_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+set HELP64_OUTPUT_DIR=%BIN64_OUTPUT_DIR%\docs
+if not exist %HELP64_OUTPUT_DIR% mkdir %HELP64_OUTPUT_DIR%
+copy /B %HELP_INPUT_FILE% %HELP64_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 
 :processing
 call :log Processing packages ...
