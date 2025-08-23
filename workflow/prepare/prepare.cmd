@@ -249,6 +249,7 @@ call :log Copying Help...
 set HELP_INPUT_FILE=%DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm
 set HELP_OUTPUT_DIR=%BIN_OUTPUT_DIR%\docs
 %HHC% "%DOCUMENTATION_INPUT_DIR%\src\dreamsdk.hhp" >> %LOG_FILE% 2>&1
+if not exist %HELP_OUTPUT_DIR% mkdir %HELP_OUTPUT_DIR%
 copy /B %HELP_INPUT_FILE% %HELP_OUTPUT_DIR% >> %LOG_FILE% 2>&1
 
 :dreamsdk_helpers64
