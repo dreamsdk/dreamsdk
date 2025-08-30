@@ -88,7 +88,7 @@ reason you have to refresh the cache (e.g., you installed a port directly from
 the command-line), you can run `kosports refresh` from the DreamSDK Shell to
 force the update.
 
-You need to learn the C/C++ programming language and the KallistiOS (KOS) API,
+**You need to learn the C/C++ programming language and the KallistiOS (KOS) API**,
 as DreamSDK is not a Unity-like framework. You can find the KallistiOS
 documentation link in your Start Menu or in various location, like the excellent
 [Dreamcast Wiki](https://dreamcast.wiki) website.
@@ -130,10 +130,12 @@ If you need help with Sega Dreamcast programming, you can:
 - Visit the [DCEmulation Programming forum](https://dcemulation.org/phpBB/viewforum.php?f=29) (official KallistiOS forum)
 
 > [!NOTE]
-> About Simulant Engine: This is a completely separate project that is based
+> **About Simulant Engine**: This is a completely separate project that is based
 > on KallistiOS. This project is not currently supported in DreamSDK, but many
-> talented people are available on this Discord channel, so don't hesitate to
+> talented people are available on the Discord channel, so don't hesitate to
 > join!
 
 ## Acknowledgments
 
+Thanks to everyone involved in the Dreamcast scene, there are too many people
+to list here!
