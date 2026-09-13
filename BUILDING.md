@@ -56,13 +56,18 @@ branch to keep Windows XP support.
 
 You will need to **clone** the main DreamSDK repository (the one that contains
 this [read-me](README.md) file). It could be whatever directory you want but
-it's better to avoid spaces in the path.
+it's better to avoid spaces in the path, e.g., using **Git CMD**:
 
-After cloning this repository, please run the following script: 
+    :: In that example, we will clone in "D:\dreamsdk"
+    cd /D D:\ && git clone https://github.com/dreamsdk/dreamsdk.git dreamsdk
 
-.\scripts\init.cmd
+After cloning this repository, you need to execute the following scripts:
 
-All Git submodules should be downloaded.
+    cd /D "D:\dreamsdk"
+    .\init.cmd
+    .\update.cmd
+
+All Git submodules should be downloaded and updated.
 
 ### Installing the previous DreamSDK package
 
@@ -77,9 +82,8 @@ package (e.g., `patch`...).
 ### Installing Lazarus IDE
 
 Lazarus is a key component as every DreamSDK binaries are written in Free
-Pascal. You can install the Lazarus IDE itself in 64-bit but all DreamSDK
-binaries should be generated in 32-bit only, as DreamSDK is a package full of
-32-bit binaries supporting Windows XP.
+Pascal. You may install Lazarus in 64-bit with the 32-bit extension, as
+DreamSDK will run on 64-bit for modern Windows and 32-bit for Windows XP.
 
 To install Lazarus IDE, you should install (assuming you're on 64-bit Windows):
 
@@ -87,27 +91,42 @@ To install Lazarus IDE, you should install (assuming you're on 64-bit Windows):
 2. Install `lazarus-{x.y.z}-fpc-{x.y.z}-cross-i386-win32-win64.exe`
 3. Start Lazarus IDE and create a new project (just to access the main menu)
 4. In the main menu, click on `Package` > `Online Package Manager...`.
-5. Search for the following package: `Synapse`. Install the `Synapse {x.yy}` 
-package by clicking on the `Install` button. Do the same with the 
-`UniqueInstance` package. You can recreate the `Normal Profiles` if asked.
+5. Search for the following packages: `Synapse` and `UniqueInstance`. Once
+   they appear, check the box next to each package to mark it for installation.
+6. Click the `Install` button to install both selected packages.
+7. After installation, you can recreate the `Normal Profiles` if asked.
+   Lazarus will closes itself, you don't need to relaunch it now.
 
 ### Installing Python 3
 
-You can install Python 3 using default settings.
+You can install Python 3 using default settings. You may of course install
+the 64-bit version.
 
-Note that if you wish to test Python extensions for GDB, you will need to
-install Python 32-bit, so you can install both 32-bit and 64-bit versions of
-Python. You can of course make the 64-bit version primary. [You can click here
-for more information](https://stackoverflow.com/a/12448411/3726096).
+Note that if you wish to test Python extensions for GDB 32-bit, you will need
+to install Python 32-bit, so it means that you have to install both 32-bit and
+64-bit versions of Python. You can of course make the 64-bit version primary.
+To do so, install the 32-bit version first, then the 64-bit version.
 
 ### Installing Git and 7-Zip
 
 For all these components, you can use the standard installation process.
+If you are using Windows 11, `7z` could be already installed.
 
 ### Installing UPX
 
 There is no installer for UPX, all you need to do is to extract it in a fixed
-rental.
+location.
+
+### Installing Microsoft HTML Help Workshop
+
+You need to install **Microsoft HTML Help Workshop** to create `CHM` files.
+You can find it in the cloned directory, in that location:
+
+    modules\doc\utils\Microsoft HTML Help Workshop\htmlhelp.exe
+
+By the way, as this tool is **REALLY** old (but there is no alternative), you
+may install **KEL CHM Creator** which is provided as well in the same location.
+This utility can help you to update `CHM` file structure easilly.
 
 ### Installing Inno Setup 5
 
@@ -122,9 +141,18 @@ as this tool simplify the development of Inno Setup scripts.
 
 ## Building DreamSDK
 
+Starting from this point all prerequisites should be installed.
+
 For building DreamSDK, you need to configure then execute the 4 scripts
-described below. You need to execute them in that order as they are dependencies
-check between all of them.
+described below. You need to execute them in that order as they are
+dependencies check between all of them.
+
+All of those scripts are located in the `workflow` directory. For all
+of them, you will have a INI file. If you want to customize it without
+having a difference spotted by Git, you may copy the file and remove the
+`.default.` keyword, e.g., `offline.default.ini` will become `offline.ini`.
+In that copied file, you may remove all the INI keys you won't change, to
+keep only the different ones.
 
 ### Step 1: Offline
 
@@ -137,8 +165,8 @@ do so but sometime, you don't have the choice to be offline. The user can choose
 the offline package directly when installing DreamSDK or later on through
 DreamSDK Manager.
 
-This script is preparing everything for embedding **KallistiOS**, **KOS Ports** and
-**Dreamcast Tool** libraries directly the DreamSDK Setup package.
+This script is preparing everything for embedding **KallistiOS**, **KOS Ports**
+and **Dreamcast Tool** libraries directly the DreamSDK Setup package.
 
 ### Step 2: Prepare
 
