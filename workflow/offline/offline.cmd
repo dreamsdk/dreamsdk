@@ -34,8 +34,10 @@ for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
 rem Utilities
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 if not exist %PATCH% set PATCH="%DREAMSDK_HOME%\usr\bin\patch.exe"
+if not exist %PATCH% goto err_dreamsdk_invalid
 set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 if not exist %RUNNER% set RUNNER="%DREAMSDK_HOME%\opt\dreamsdk\dreamsdk-runner.exe"
+if not exist %RUNNER% goto err_dreamsdk_invalid
 set PYREPL="%PYTHON%" "%BASE_DIR%\data\pyrepl.py"
 set GETDATE="%PYTHON%" "%BASE_DIR%\data\getdate.py"
 
@@ -125,6 +127,7 @@ set FETCH_ALL=%KOS_PORTS_UTILS_DIR%\fetch-all.sh
 call :win2unix FETCH_ALL
 cd /D %KOS_PORTS_UTILS_DIR%
 %RUNNER% %FETCH_ALL% >> %LOG_FILE% 2>&1
+if errorlevel 1 goto err_fetch_failed
 call :wait
 
 rem Copy everything
@@ -205,6 +208,18 @@ goto end
 
 :err_dreamsdk_missing
 call :err Please install DreamSDK before using this script.
+goto end
+
+:err_dreamsdk_invalid
+call :err A working DreamSDK installation is required to run this script.
+call :log The installation referenced by DREAMSDK_HOME appears to be missing or incomplete.
+call :log Directory: "%DREAMSDK_HOME%"
+goto end
+
+:err_fetch_failed
+call :err Failed to download the KallistiOS Ports sources.
+call :log A working DreamSDK installation is required to run this script.
+call :log See "%LOG_FILE%" for details.
 goto end
 
 rem ## Utilities ###############################################################
