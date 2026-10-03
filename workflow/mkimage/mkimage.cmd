@@ -151,12 +151,12 @@ if "%errorlevel%+"=="0+" goto generate_cdi_dcload_ip
 goto err_generation
 
 :generate_cdi_dcload_ip
-if "%GENERATE_DREAMCAST_TOOL_SERIAL_IMAGE%+"=="1+" (
+if "%GENERATE_DREAMCAST_TOOL_INTERNET_PROTOCOL_IMAGE%+"=="1+" (
   call :generate_cdi "Internet Protocol" dcload-ip %DREAMCAST_TOOL_INTERNET_PROTOCOL_URL%
 )
 
 :generate_cdi_dcload_serial
-if "%GENERATE_DREAMCAST_TOOL_INTERNET_PROTOCOL_IMAGE%+"=="1+" (
+if "%GENERATE_DREAMCAST_TOOL_SERIAL_IMAGE%+"=="1+" (
   call :generate_cdi "Serial" dcload-serial %DREAMCAST_TOOL_SERIAL_URL%
 )
 
