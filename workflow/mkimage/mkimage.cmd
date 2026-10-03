@@ -37,9 +37,6 @@ set MKISOFS="%DREAMSDK_HOME%\msys\1.0\bin\mkisofs.exe"
 if not exist %MKISOFS% set MKISOFS="%DREAMSDK_HOME%\usr\bin\mkisofs.exe"
 set CDI4DC="%DREAMSDK_HOME%\msys\1.0\bin\cdi4dc.exe"
 if not exist %CDI4DC% set CDI4DC="%DREAMSDK_HOME%\usr\bin\cdi4dc.exe"
-set GETVER="%PYTHON%" "%BASE_DIR%\data\getver.py" "%SETUP_SOURCE_DIR%\setup.exe"
-set UPPER="%PYTHON%" "%BASE_DIR%\data\upper.py"
-set GENSORT="%PYTHON%" "%BASE_DIR%\data\gensort.py"
 set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 if not exist %RUNNER% set RUNNER="%DREAMSDK_HOME%\opt\dreamsdk\dreamsdk-runner.exe"
 
@@ -65,12 +62,26 @@ if not exist %IMAGE_OUTPUT_DIR% mkdir %IMAGE_OUTPUT_DIR%
 if not exist %MKISOFS% goto err_binary_mkisofs
 if not exist %CDI4DC% goto err_binary_cdi4dc
 
+:check_cdi_tools
+rem Git, 7-Zip and UPX are only needed for generating the CDI images
+if not "%GENERATE_DREAMCAST_TOOL_SERIAL_IMAGE%+"=="1+" if not "%GENERATE_DREAMCAST_TOOL_INTERNET_PROTOCOL_IMAGE%+"=="1+" goto check_python
+call :resolvebinary FUNC_RESULT GIT
+if "+%FUNC_RESULT%"=="+0" goto err_binary_git
+call :resolvebinary FUNC_RESULT SEVENZIP
+if "+%FUNC_RESULT%"=="+0" goto err_binary_sevenzip
+call :resolvebinary FUNC_RESULT UPX32
+if "+%FUNC_RESULT%"=="+0" goto err_binary_upx
+
 :check_python
+call :resolvebinary FUNC_RESULT PYTHON
+if "+%FUNC_RESULT%"=="+0" goto err_binary_python
 set PYTHON_VERSION_MAJOR=
 set PYTHON_VERSION=
 call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
-if "$%PYTHON_VERSION_MAJOR%"=="$3" goto start
-goto err_binary_python
+if not "$%PYTHON_VERSION_MAJOR%"=="$3" goto err_binary_python
+set GETVER=%PYTHON% "%BASE_DIR%\data\getver.py" "%SETUP_SOURCE_DIR%\setup.exe"
+set UPPER=%PYTHON% "%BASE_DIR%\data\upper.py"
+set GENSORT=%PYTHON% "%BASE_DIR%\data\gensort.py"
 
 rem Do the magic!
 
@@ -195,6 +206,21 @@ call :err Python 3 was not found.
 call :log File: "%PYTHON%"
 goto end
 
+:err_binary_git
+call :err Git was not found.
+call :log File: "%GIT%"
+goto end
+
+:err_binary_sevenzip
+call :err 7-Zip was not found.
+call :log File: "%SEVENZIP%"
+goto end
+
+:err_binary_upx
+call :err UPX was not found.
+call :log File: "%UPX32%"
+goto end
+
 :err_generation
 call :err Unable to generate the ISO file.
 call :log File: "%SETUP_OUTPUT_ISO_FILE%"
@@ -275,6 +301,38 @@ endlocal & (
 	set "%~1=%_python_version_major%"
 	set "%~2=%_python_version%"
 )
+goto :EOF
+
+:resolvebinary
+rem Resolve an external program to its absolute path, so it can be used
+rem everywhere (including by the Python scripts). The variable may contain an
+rem absolute/relative path (quoted or not) or a command available in the PATH.
+rem On success, the variable is replaced by the quoted absolute path.
+rem Usage: call :resolvebinary FUNC_RESULT <VARNAME>
+setlocal EnableDelayedExpansion
+set "_varname=%~2"
+set "_exec=!%_varname%!"
+set "_orig=!_exec!"
+set "_resolved="
+set _result=0
+if not defined _exec goto resolvebinary_exit
+set "_exec=!_exec:"=!"
+for %%x in ("!_exec!") do (
+  if exist "%%~fx" if not exist "%%~fx\" set "_resolved=%%~fx"
+)
+if defined _resolved goto resolvebinary_found
+for %%x in ("!_exec!" "!_exec!.exe") do (
+  if not defined _resolved if not "%%~$PATH:x"=="" if not exist "%%~$PATH:x\" set "_resolved=%%~$PATH:x"
+)
+if not defined _resolved (
+  set "_exec=!_orig!"
+  goto resolvebinary_exit
+)
+:resolvebinary_found
+set _result=1
+set "_exec="!_resolved!""
+:resolvebinary_exit
+endlocal & set "%~1=%_result%" & set "%~2=%_exec%"
 goto :EOF
 
 :check_command

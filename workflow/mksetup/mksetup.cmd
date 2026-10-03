@@ -46,7 +46,7 @@ call :checkdir FUNC_RESULT %SETUP_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
 :check_iscc
-call :checkfile FUNC_RESULT %ISCC%
+call :resolvebinary FUNC_RESULT ISCC
 if "+%FUNC_RESULT%"=="+0" goto err_binary_iscc
 
 :check_dualsign
@@ -181,6 +181,38 @@ if not exist %_dirname% mkdir %_dirname%
 if exist %_dirname% set _direxist=1
 :checkdir_exit
 endlocal & set "%~1=%_direxist%"
+goto :EOF
+
+:resolvebinary
+rem Resolve an external program to its absolute path, so it can be used
+rem everywhere (including by the Python scripts). The variable may contain an
+rem absolute/relative path (quoted or not) or a command available in the PATH.
+rem On success, the variable is replaced by the quoted absolute path.
+rem Usage: call :resolvebinary FUNC_RESULT <VARNAME>
+setlocal EnableDelayedExpansion
+set "_varname=%~2"
+set "_exec=!%_varname%!"
+set "_orig=!_exec!"
+set "_resolved="
+set _result=0
+if not defined _exec goto resolvebinary_exit
+set "_exec=!_exec:"=!"
+for %%x in ("!_exec!") do (
+  if exist "%%~fx" if not exist "%%~fx\" set "_resolved=%%~fx"
+)
+if defined _resolved goto resolvebinary_found
+for %%x in ("!_exec!" "!_exec!.exe") do (
+  if not defined _resolved if not "%%~$PATH:x"=="" if not exist "%%~$PATH:x\" set "_resolved=%%~$PATH:x"
+)
+if not defined _resolved (
+  set "_exec=!_orig!"
+  goto resolvebinary_exit
+)
+:resolvebinary_found
+set _result=1
+set "_exec="!_resolved!""
+:resolvebinary_exit
+endlocal & set "%~1=%_result%" & set "%~2=%_exec%"
 goto :EOF
 
 :checkfile

@@ -38,8 +38,6 @@ if not exist %PATCH% goto err_dreamsdk_invalid
 set RUNNER="%DREAMSDK_HOME%\msys\1.0\opt\dreamsdk\dreamsdk-runner.exe"
 if not exist %RUNNER% set RUNNER="%DREAMSDK_HOME%\opt\dreamsdk\dreamsdk-runner.exe"
 if not exist %RUNNER% goto err_dreamsdk_invalid
-set PYREPL="%PYTHON%" "%BASE_DIR%\data\pyrepl.py"
-set GETDATE="%PYTHON%" "%BASE_DIR%\data\getdate.py"
 
 rem Input Directory
 call :get_temp_working_dir DreamSDK-Offline-Working INPUT_DIR
@@ -74,19 +72,25 @@ if not exist %LIB_INPUT_DIR% mkdir %LIB_INPUT_DIR%
 if not exist %DCLOAD_INPUT_DIR% mkdir %DCLOAD_INPUT_DIR%
 
 :check_git
+call :resolvebinary FUNC_RESULT GIT
+if "+%FUNC_RESULT%"=="+0" goto err_binary_git
 set GIT_VERSION=
 call :get_version_git GIT_VERSION
 if "$%GIT_VERSION%"=="$" goto err_binary_git
 
 :check_sevenzip
-if not exist %SEVENZIP% goto err_binary_sevenzip
+call :resolvebinary FUNC_RESULT SEVENZIP
+if "+%FUNC_RESULT%"=="+0" goto err_binary_sevenzip
 
 :check_python
+call :resolvebinary FUNC_RESULT PYTHON
+if "+%FUNC_RESULT%"=="+0" goto err_binary_python
 set PYTHON_VERSION_MAJOR=
 set PYTHON_VERSION=
 call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
-if "$%PYTHON_VERSION_MAJOR%"=="$3" goto start
-goto err_binary_python
+if not "$%PYTHON_VERSION_MAJOR%"=="$3" goto err_binary_python
+set PYREPL=%PYTHON% "%BASE_DIR%\data\pyrepl.py"
+set GETDATE=%PYTHON% "%BASE_DIR%\data\getdate.py"
 
 :start
 pushd .
@@ -437,6 +441,38 @@ set _exec=%_exec%.exe
 for %%x in (%_exec%) do if not [%%~$PATH:x]==[] set _cmdfound=1
 :check_command_exit
 endlocal & set "%~2=%_cmdfound%"
+goto :EOF
+
+:resolvebinary
+rem Resolve an external program to its absolute path, so it can be used
+rem everywhere (including by the Python scripts). The variable may contain an
+rem absolute/relative path (quoted or not) or a command available in the PATH.
+rem On success, the variable is replaced by the quoted absolute path.
+rem Usage: call :resolvebinary FUNC_RESULT <VARNAME>
+setlocal EnableDelayedExpansion
+set "_varname=%~2"
+set "_exec=!%_varname%!"
+set "_orig=!_exec!"
+set "_resolved="
+set _result=0
+if not defined _exec goto resolvebinary_exit
+set "_exec=!_exec:"=!"
+for %%x in ("!_exec!") do (
+  if exist "%%~fx" if not exist "%%~fx\" set "_resolved=%%~fx"
+)
+if defined _resolved goto resolvebinary_found
+for %%x in ("!_exec!" "!_exec!.exe") do (
+  if not defined _resolved if not "%%~$PATH:x"=="" if not exist "%%~$PATH:x\" set "_resolved=%%~$PATH:x"
+)
+if not defined _resolved (
+  set "_exec=!_orig!"
+  goto resolvebinary_exit
+)
+:resolvebinary_found
+set _result=1
+set "_exec="!_resolved!""
+:resolvebinary_exit
+endlocal & set "%~1=%_result%" & set "%~2=%_exec%"
 goto :EOF
 
 :get_temp_working_dir

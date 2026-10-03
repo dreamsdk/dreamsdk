@@ -62,14 +62,6 @@ call :log
 rem Utilities
 set PATCH="%DREAMSDK_HOME%\msys\1.0\bin\patch.exe"
 if not exist %PATCH% set PATCH="%DREAMSDK_HOME%\usr\bin\patch.exe"
-set RELMODE="%PYTHON%" "%BASE_DIR%\data\relmode.py"
-set MKCFGGDB="%PYTHON%" "%BASE_DIR%\data\mkcfggdb.py"
-set MKCFGTOOLCHAINS="%PYTHON%" "%BASE_DIR%\data\mkcfgtoolchains.py"
-set MKCONFIG="%PYTHON%" "%BASE_DIR%\data\mkconfig.py"
-set MKDIRTREE="%PYTHON%" "%BASE_DIR%\data\mkdirtree.py"
-set MKVERSION="%PYTHON%" "%BASE_DIR%\data\mkversion.py"
-set MKWRAPPERS="%PYTHON%" "%BASE_DIR%\data\mkwrappers.py"
-set VERSIONUPDATER="%PYTHON%" "%BASE_DIR%\data\versionupdater.py"
 set DUALSIGN="%SETUP_OUTPUT_DIR%\tools\dualsign\dualsign.cmd"
 set WGET="%DREAMSDK_HOME%\msys\1.0\bin\wget.exe"
 if not exist %WGET% set WGET="%DREAMSDK_HOME%\usr\bin\wget.exe"
@@ -136,29 +128,40 @@ call :checkdir FUNC_RESULT %SETUP_CONFIG_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_output_dir
 
 :check_sevenzip
-call :checkfile FUNC_RESULT %SEVENZIP%
+call :resolvebinary FUNC_RESULT SEVENZIP
 if "+%FUNC_RESULT%"=="+0" goto err_binary_sevenzip
 
 :check_upx
-call :checkfile FUNC_RESULT %UPXPACK%
+call :resolvebinary FUNC_RESULT UPXPACK
 if "+%FUNC_RESULT%"=="+0" goto err_binary_upx
 
+:check_lazbuild
+call :resolvebinary FUNC_RESULT LAZBUILD
+if "+%FUNC_RESULT%"=="+0" goto err_binary_lazbuild
+
 :check_hhc
-call :checkfile FUNC_RESULT %HHC%
+call :resolvebinary FUNC_RESULT HHC
 if "+%FUNC_RESULT%"=="+0" goto err_hhc_missing
 
+:check_iscc
+call :resolvebinary FUNC_RESULT ISCC
+if "+%FUNC_RESULT%"=="+0" goto err_binary_iscc
+
 :check_python
-call :checkfile FUNC_RESULT %PYTHON%
+call :resolvebinary FUNC_RESULT PYTHON
 if "+%FUNC_RESULT%"=="+0" goto err_binary_python
 set PYTHON_VERSION_MAJOR=
 set PYTHON_VERSION=
 call :get_version_python PYTHON_VERSION_MAJOR PYTHON_VERSION
-if "$%PYTHON_VERSION_MAJOR%"=="$3" goto check_dualsign
-goto err_binary_python
-
-:check_iscc
-call :checkfile FUNC_RESULT %ISCC%
-if "+%FUNC_RESULT%"=="+0" goto err_binary_iscc
+if not "$%PYTHON_VERSION_MAJOR%"=="$3" goto err_binary_python
+set RELMODE=%PYTHON% "%BASE_DIR%\data\relmode.py"
+set MKCFGGDB=%PYTHON% "%BASE_DIR%\data\mkcfggdb.py"
+set MKCFGTOOLCHAINS=%PYTHON% "%BASE_DIR%\data\mkcfgtoolchains.py"
+set MKCONFIG=%PYTHON% "%BASE_DIR%\data\mkconfig.py"
+set MKDIRTREE=%PYTHON% "%BASE_DIR%\data\mkdirtree.py"
+set MKVERSION=%PYTHON% "%BASE_DIR%\data\mkversion.py"
+set MKWRAPPERS=%PYTHON% "%BASE_DIR%\data\mkwrappers.py"
+set VERSIONUPDATER=%PYTHON% "%BASE_DIR%\data\versionupdater.py"
 
 :check_dualsign
 if "%SIGN_BINARIES%+"=="1+" (
@@ -492,6 +495,11 @@ call :err UPX was not found.
 call :log File: "%UPXPACK%"
 goto end
 
+:err_binary_lazbuild
+call :err Lazarus Build (lazbuild) was not found.
+call :log File: "%LAZBUILD%"
+goto end
+
 :err_binary_iscc
 call :err Inno Setup Compiler was not found.
 call :log File: "%ISCC%"
@@ -544,7 +552,7 @@ goto :EOF
 setlocal EnableDelayedExpansion
 set "_varname=%~1"
 set "_str=!%_varname%!"
-for /f "delims=" %%a in ('%PYTHON% -c "import sys; print(sys.argv[1].lower())" "!_str!"') do (
+for /f "delims=" %%a in ('call %PYTHON% -c "import sys; print(sys.argv[1].lower())" "!_str!"') do (
   set "_result=%%a"
 )
 endlocal & (
@@ -871,17 +879,36 @@ if exist %_dirname% set _direxist=1
 endlocal & set "%~1=%_direxist%"
 goto :EOF
 
-:checkfile
+:resolvebinary
+rem Resolve an external program to its absolute path, so it can be used
+rem everywhere (including by the Python scripts). The variable may contain an
+rem absolute/relative path (quoted or not) or a command available in the PATH.
+rem On success, the variable is replaced by the quoted absolute path.
+rem Usage: call :resolvebinary FUNC_RESULT <VARNAME>
 setlocal EnableDelayedExpansion
-set _filepath=%2
-set _fileexist=0
-if [%_filepath%]==[] goto checkfile_exit
-if exist %_filepath% set _fileexist=1
-if "$%_fileexist%"=="$0" (
-  call :check_command %_filepath% _fileexist
+set "_varname=%~2"
+set "_exec=!%_varname%!"
+set "_orig=!_exec!"
+set "_resolved="
+set _result=0
+if not defined _exec goto resolvebinary_exit
+set "_exec=!_exec:"=!"
+for %%x in ("!_exec!") do (
+  if exist "%%~fx" if not exist "%%~fx\" set "_resolved=%%~fx"
 )
-:checkfile_exit
-endlocal & set "%~1=%_fileexist%"
+if defined _resolved goto resolvebinary_found
+for %%x in ("!_exec!" "!_exec!.exe") do (
+  if not defined _resolved if not "%%~$PATH:x"=="" if not exist "%%~$PATH:x\" set "_resolved=%%~$PATH:x"
+)
+if not defined _resolved (
+  set "_exec=!_orig!"
+  goto resolvebinary_exit
+)
+:resolvebinary_found
+set _result=1
+set "_exec="!_resolved!""
+:resolvebinary_exit
+endlocal & set "%~1=%_result%" & set "%~2=%_exec%"
 goto :EOF
 
 :buildpkgcache
