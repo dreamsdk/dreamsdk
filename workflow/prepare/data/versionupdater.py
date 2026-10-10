@@ -7,6 +7,7 @@ import re
 import argparse
 import sys
 from datetime import datetime
+from xml.sax.saxutils import escape
 
 def validate_base_version_format(version: str) -> bool:
     """
@@ -42,6 +43,27 @@ def generate_copyright() -> str:
     """
     current_year = datetime.now().year
     return f"© Copyleft 2018-{current_year}"
+
+def set_tag_attribute(tag: str, name: str, value: str) -> str:
+    """
+    Sets an attribute value in a single XML tag (given as text), keeping the
+    rest of the tag untouched. The attribute is added if missing.
+
+    Args:
+        tag: XML tag text, e.g. '<StringTable ProductVersion="1.0"/>'
+        name: Attribute name
+        value: New attribute value (not escaped)
+
+    Returns:
+        str: The updated tag text
+    """
+    escaped_value = escape(value, {'"': "&quot;"})
+    pattern = re.compile(r'(\s' + re.escape(name) + r'\s*=\s*)(["\'])(.*?)\2', re.DOTALL)
+    if pattern.search(tag):
+        return pattern.sub(lambda m: f'{m.group(1)}{m.group(2)}{escaped_value}{m.group(2)}', tag, count=1)
+    # Insert before the end of the tag ("/>" or ">")
+    end = re.search(r'\s*/?>$', tag)
+    return f'{tag[:end.start()]} {name}="{escaped_value}"{tag[end.start():]}'
 
 def update_product_version(lpi_path: str, base_version: str) -> bool:
     """
@@ -84,22 +106,41 @@ def update_product_version(lpi_path: str, base_version: str) -> bool:
         # In .lpi files, StringTable is an attribute container, not a separate element
         string_table = root.find(".//ProjectOptions/VersionInfo/StringTable")
         
-        if string_table is not None:
-            # Update ProductVersion
-            string_table.set("ProductVersion", full_version)
-            print(f"Success: ProductVersion updated to {full_version}")
-            
-            # Update LegalCopyright
-            string_table.set("LegalCopyright", copyright_text)
-            print(f"Success: LegalCopyright updated to {copyright_text}")
-            
-            # Write the changes to file
-            tree.write(full_path, encoding="utf-8", xml_declaration=True, short_empty_elements=True)
-            print(f"File successfully updated: {full_path}")
-            return True
-        else:
+        if string_table is None:
             print(f"Error: StringTable not found in path ProjectOptions/VersionInfo/StringTable in {full_path}")
             return False
+
+        # The XML tree is only used to validate the file: rewriting it would
+        # reformat the whole file (quotes, spaces before "/>"...), so only the
+        # StringTable tag is changed in the original text. The file is read as
+        # bytes to keep the line endings and BOM (if any) as they are.
+        with open(full_path, 'rb') as f:
+            content = f.read().decode('utf-8')
+
+        version_info = re.search(r'<VersionInfo\b[^>]*>.*?</VersionInfo>', content, re.DOTALL)
+        string_table_tag = version_info and re.search(r'<StringTable\b[^>]*>', version_info.group(0))
+        if not string_table_tag:
+            print(f"Error: StringTable tag not found in VersionInfo in {full_path}")
+            return False
+
+        old_tag = string_table_tag.group(0)
+        new_tag = set_tag_attribute(old_tag, "ProductVersion", full_version)
+        print(f"Success: ProductVersion updated to {full_version}")
+        new_tag = set_tag_attribute(new_tag, "LegalCopyright", copyright_text)
+        print(f"Success: LegalCopyright updated to {copyright_text}")
+
+        if new_tag == old_tag:
+            print(f"File already up to date: {full_path}")
+            return True
+
+        start = version_info.start() + string_table_tag.start()
+        content = content[:start] + new_tag + content[start + len(old_tag):]
+
+        # Write the changes to file
+        with open(full_path, 'wb') as f:
+            f.write(content.encode('utf-8'))
+        print(f"File successfully updated: {full_path}")
+        return True
             
     except ET.ParseError as e:
         print(f"Error: Failed to parse XML file {full_path}: {e}")
