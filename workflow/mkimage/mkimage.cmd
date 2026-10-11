@@ -19,7 +19,8 @@ rem Some temp directory and files
 set TEMP_RESULT_FILE=%TEMP%\~%BASE_NAME%.tmp
 
 rem Read Configuration
-set CONFIG_FILE=%BASE_DIR%\%BASE_NAME%.ini
+set "CONFIG_FILE=%BASE_DIR%\%BASE_NAME%.ini"
+if not exist "%CONFIG_FILE%" set "CONFIG_FILE=%BASE_DIR%\%BASE_NAME%.default.ini"
 if not exist "%CONFIG_FILE%" goto err_config
 for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   set %%i 2> nul
@@ -422,6 +423,7 @@ if exist %_target_file_path% (
 )
 
 :generate_cdi_make_package
+if exist "%IMAGE_OUTPUT_DIR%\dcload.zip" del "%IMAGE_OUTPUT_DIR%\dcload.zip"
 %SEVENZIP% a -xr^^!.git\ -xr^^!*~ -mx9 "%IMAGE_OUTPUT_DIR%\dcload.zip" %_outdir%\* >> %LOG_FILE% 2>&1
 
 :generate_cdi_dcload_make
@@ -434,6 +436,18 @@ if not exist %_makefile_backup% (
   move %_makefile_temp% %_makefile_conf% >> %LOG_FILE% 2>&1
 )
 %RUNNER% "make" >> %LOG_FILE% 2>&1
+
+:generate_cdi_make_bootstrap
+rem Some dcload flavours (e.g., dcload-ip) don't ship a pre-built IP.BIN, it
+rem needs to be generated from the "make-cd" directory (this uses makeip)
+if not exist %_outdir%\make-cd\IP.BIN (
+  %RUNNER% "make -C make-cd IP.BIN" >> %LOG_FILE% 2>&1
+)
+if not exist %_outdir%\make-cd\IP.BIN (
+  call :err Unable to generate the IP.BIN bootstrap file.
+  call :log File: "%_outdir%\make-cd\IP.BIN"
+  goto generate_cdi_exit
+)
 
 :generate_cdi_prepare_disc
 call :generate_autorun_inf "%_friendly_volume_label%"
@@ -459,6 +473,8 @@ set BOOTSTRAP_FILE=%IMAGE_OUTPUT_DIR%\IP.BIN
 call :win2unix BOOTSTRAP_FILE
 call :win2unix SORT_FILE
 %RUNNER% "makedisc %_target_file_path% %SOURCE_DIR% %BOOTSTRAP_FILE% %_volume_label% --data --joliet-rock %SORT_FILE%" >> %LOG_FILE% 2>&1
+
+:generate_cdi_exit
 endlocal
 goto :EOF
 
