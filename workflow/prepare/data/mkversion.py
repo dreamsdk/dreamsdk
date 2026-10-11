@@ -11,7 +11,7 @@ import sys
 from datetime import datetime
 
 
-def generate_version_config(output_path, major, minor, build):
+def generate_version_config(output_path, major, minor, build, debug_suffix=""):
     """
     Generate a version.config.iss file with the specified parameters.
     
@@ -20,6 +20,7 @@ def generate_version_config(output_path, major, minor, build):
         major (str): Major version number
         minor (str): Minor version number  
         build (str): Build version number
+        debug_suffix (str): Suffix appended after "-dev" in DEBUG mode (e.g., "alpha1")
         
     Returns:
         bool: True if file was created successfully, False otherwise
@@ -50,6 +51,7 @@ def generate_version_config(output_path, major, minor, build):
 #define VersionNumberMajor "{major}"
 #define VersionNumberMinor "{minor}"
 #define VersionNumberBuild "{build}"
+#define VersionDebugSuffix "{debug_suffix}"
 """
         
         # Write the file        
@@ -59,6 +61,7 @@ def generate_version_config(output_path, major, minor, build):
         
         print(f"File generated successfully at: {output_path}")
         print(f"Version: {major}.{minor}.{build}")
+        print(f"Debug suffix: {debug_suffix}")
         print(f"Generated on: {current_datetime}")
         
         return True
@@ -72,15 +75,16 @@ def main():
     """
     Main function to handle command line arguments and call the generator.
     """
-    if len(sys.argv) != 5:
-        print("Usage: python mkversion.py <output_path> <major> <minor> <build>")
-        print("Example: python mkversion.py 'C:/temp/version.config.iss' '4' '0' '9'")
+    if len(sys.argv) not in (5, 6):
+        print("Usage: python mkversion.py <output_path> <major> <minor> <build> [debug_suffix]")
+        print("Example: python mkversion.py 'C:/temp/version.config.iss' '4' '0' '9' 'alpha1'")
         sys.exit(1)
     
     output_path = sys.argv[1]
     major = sys.argv[2]
     minor = sys.argv[3]
     build = sys.argv[4]
+    debug_suffix = sys.argv[5].strip() if len(sys.argv) == 6 else ""
     
     # Validate version numbers (should be numeric)
     try:
@@ -90,9 +94,14 @@ def main():
     except ValueError:
         print("Error: Version numbers must be numeric")
         sys.exit(1)
+
+    # Validate debug suffix (should be alphanumeric, e.g., "alpha1", "beta2")
+    if debug_suffix and not debug_suffix.isalnum():
+        print("Error: Debug suffix must be alphanumeric")
+        sys.exit(1)
     
     # Generate the file
-    success = generate_version_config(output_path, major, minor, build)
+    success = generate_version_config(output_path, major, minor, build, debug_suffix)
     
     if not success:
         sys.exit(1)
