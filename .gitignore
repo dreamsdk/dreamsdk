@@ -80,6 +80,7 @@ lib/
 *.tmp
 .cd_root/
 .dcload/
+.zip_root/
 sortfile.str
 dist/
 pkgcache/

@@ -59,17 +59,27 @@ if not exist %DCLOAD_INPUT_DIR% mkdir %DCLOAD_INPUT_DIR%
 set IMAGE_OUTPUT_DIR=%BASE_DIR%\.cd_root
 if not exist %IMAGE_OUTPUT_DIR% mkdir %IMAGE_OUTPUT_DIR%
 
+set ZIP_OUTPUT_DIR=%BASE_DIR%\.zip_root
+
 :check_tools
 if not exist %MKISOFS% goto err_binary_mkisofs
 if not exist %CDI4DC% goto err_binary_cdi4dc
 
-:check_cdi_tools
-rem Git, 7-Zip and UPX are only needed for generating the CDI images
-if not "%GENERATE_DREAMCAST_TOOL_SERIAL_IMAGE%+"=="1+" if not "%GENERATE_DREAMCAST_TOOL_INTERNET_PROTOCOL_IMAGE%+"=="1+" goto check_python
-call :resolvebinary FUNC_RESULT GIT
-if "+%FUNC_RESULT%"=="+0" goto err_binary_git
+set GENERATE_CDI_IMAGES=0
+if "%GENERATE_DREAMCAST_TOOL_SERIAL_IMAGE%+"=="1+" set GENERATE_CDI_IMAGES=1
+if "%GENERATE_DREAMCAST_TOOL_INTERNET_PROTOCOL_IMAGE%+"=="1+" set GENERATE_CDI_IMAGES=1
+
+:check_sevenzip
+rem 7-Zip is only needed for generating the ZIP package and the CDI images
+if not "%GENERATE_ZIP_PACKAGE%+"=="1+" if not "%GENERATE_CDI_IMAGES%+"=="1+" goto check_python
 call :resolvebinary FUNC_RESULT SEVENZIP
 if "+%FUNC_RESULT%"=="+0" goto err_binary_sevenzip
+
+:check_cdi_tools
+rem Git and UPX are only needed for generating the CDI images
+if not "%GENERATE_CDI_IMAGES%+"=="1+" goto check_python
+call :resolvebinary FUNC_RESULT GIT
+if "+%FUNC_RESULT%"=="+0" goto err_binary_git
 call :resolvebinary FUNC_RESULT UPX32
 if "+%FUNC_RESULT%"=="+0" goto err_binary_upx
 
@@ -128,10 +138,16 @@ rem Output files
 set SETUP_OUTPUT_BASE_FILE=%PACKAGE_NAME%-%PACKAGE_RELEASE_VERSION%-Setup
 set SETUP_OUTPUT_ISO_FILE=%SETUP_OUTPUT_BASE_FILE%.iso
 set SETUP_OUTPUT_ISO_PATH=%SETUP_OUTPUT_DIR%\%SETUP_OUTPUT_ISO_FILE%
+set SETUP_OUTPUT_ZIP_FILE=%SETUP_OUTPUT_BASE_FILE%.zip
+set SETUP_OUTPUT_ZIP_PATH=%SETUP_OUTPUT_DIR%\%SETUP_OUTPUT_ZIP_FILE%
 set DISC_ID_DIZ=%IMAGE_OUTPUT_DIR%\disc_id.diz
 
 :check_iso
 if exist %SETUP_OUTPUT_ISO_PATH% goto err_generated_iso
+
+:check_zip
+if not "%GENERATE_ZIP_PACKAGE%+"=="1+" goto make_autorun_inf
+if exist %SETUP_OUTPUT_ZIP_PATH% goto err_generated_zip
 
 :make_autorun_inf
 call :generate_autorun_inf "%APPID%"
@@ -143,6 +159,13 @@ copy /B %DREAMSDK_INPUT_DIR%\LICENSE %IMAGE_OUTPUT_DIR%\license.txt >> %LOG_FILE
 copy /B %DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm %IMAGE_OUTPUT_DIR%\dreamsdk.chm >> %LOG_FILE% 2>&1
 echo %SETUP_OUTPUT_BASE_FILE% > %DISC_ID_DIZ%
 echo Build %PACKAGE_BUILD_VERSION% (%TIMESTAMP%) >> %DISC_ID_DIZ%
+
+:generate_zip
+if not "%GENERATE_ZIP_PACKAGE%+"=="1+" goto generate_iso
+call :log Generating: ZIP Package
+call :generate_zip_package
+if "%errorlevel%+"=="0+" goto generate_iso
+goto err_generation_zip
 
 :generate_iso
 rem Generate Setup program
@@ -230,6 +253,16 @@ goto end
 :err_generated_iso
 call :err ISO file was already generated.
 call :log File: "%SETUP_OUTPUT_ISO_FILE%"
+goto end
+
+:err_generation_zip
+call :err Unable to generate the ZIP file.
+call :log File: "%SETUP_OUTPUT_ZIP_FILE%"
+goto end
+
+:err_generated_zip
+call :err ZIP file was already generated.
+call :log File: "%SETUP_OUTPUT_ZIP_FILE%"
 goto end
 
 rem ## Utilities ###############################################################
@@ -477,6 +510,24 @@ call :win2unix SORT_FILE
 :generate_cdi_exit
 endlocal
 goto :EOF
+
+:generate_zip_package
+rem The Setup is renamed, so the slices (setup-x.bin) need to be renamed as well
+setlocal EnableDelayedExpansion
+set _zip_result=0
+if exist "%ZIP_OUTPUT_DIR%" rmdir /s /q "%ZIP_OUTPUT_DIR%"
+mkdir "%ZIP_OUTPUT_DIR%"
+copy /B "%SETUP_SOURCE_DIR%\setup.exe" "%ZIP_OUTPUT_DIR%\%SETUP_OUTPUT_BASE_FILE%.exe" >> %LOG_FILE% 2>&1
+for %%f in ("%SETUP_SOURCE_DIR%\setup-*.bin") do (
+  set "_slice=%%~nxf"
+  copy /B "%%~f" "%ZIP_OUTPUT_DIR%\%SETUP_OUTPUT_BASE_FILE%!_slice:~5!" >> %LOG_FILE% 2>&1
+)
+copy /B "%DOCUMENTATION_INPUT_DIR%\bin\dreamsdk.chm" "%ZIP_OUTPUT_DIR%\%PACKAGE_NAME%.chm" >> %LOG_FILE% 2>&1
+copy /B "%DISC_ID_DIZ%" "%ZIP_OUTPUT_DIR%\disc_id.diz" >> %LOG_FILE% 2>&1
+%SEVENZIP% a -tzip "%SETUP_OUTPUT_ZIP_PATH%" "%ZIP_OUTPUT_DIR%\*" >> %LOG_FILE% 2>&1
+if not "%errorlevel%+"=="0+" set _zip_result=1
+rmdir /s /q "%ZIP_OUTPUT_DIR%"
+endlocal & exit /b %_zip_result%
 
 :copy
 set EXCLUDE_FILE=%BASE_DIR%\exclude.txt
