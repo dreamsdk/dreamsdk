@@ -204,6 +204,9 @@ if "+%FUNC_RESULT%"=="+0" goto end
 call :copybinary FUNC_RESULT cbhelper 32 %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
+call :copybinary FUNC_RESULT postinst 32 %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
 :dreamsdk_helpers
 call :log Copying Helpers...
 set HELPERS_OUTPUT_DIR=%BIN_OUTPUT_DIR%\helpers
