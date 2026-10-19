@@ -174,6 +174,8 @@ pushd .
 :lib_embedded
 call :log Checking embedded libraries...
 if not exist "%OUTPUT_DIR%\lib-embedded" goto err_offline
+rem Written by the Offline script only when it went until the end
+if not exist "%OUTPUT_DIR%\offline.stamp" goto err_offline
 
 :source_packages
 call :log Checking embedded source packages...
@@ -522,7 +524,7 @@ call :log File: "%DUALSIGN%"
 goto end
 
 :err_offline
-call :err Missing embedded/offline files. Please run the Offline script first.
+call :err Missing or incomplete embedded/offline files. Please run the Offline script first, until the end.
 goto end
 
 :err_wrappers

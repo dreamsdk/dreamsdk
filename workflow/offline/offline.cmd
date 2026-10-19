@@ -48,6 +48,9 @@ if not exist "%SETUP_OUTPUT_DIR%" goto err_output_dir
 set OUTPUT_DIR=%SETUP_OUTPUT_DIR%\.sources
 if not exist "%OUTPUT_DIR%" mkdir %OUTPUT_DIR%
 
+rem Written only when everything is processed: checked by the Prepare script
+set OFFLINE_STAMP_FILE=%OUTPUT_DIR%\offline.stamp
+
 rem KallistiOS Directories
 set LIB_INPUT_DIR=%INPUT_DIR%\lib
 set LIB_OUTPUT_DIR=%OUTPUT_DIR%\lib-embedded\lib
@@ -94,6 +97,9 @@ set GETDATE=%PYTHON% "%BASE_DIR%\data\getdate.py"
 
 :start
 pushd .
+
+rem The output directories are about to be changed
+if exist "%OFFLINE_STAMP_FILE%" del "%OFFLINE_STAMP_FILE%"
 
 rem KallistiOS
 :kos
@@ -170,6 +176,7 @@ call :copy %DCLOAD_SER_INPUT_DIR% %DCLOAD_SER_OUTPUT_DIR% %VERSION_DCLOAD_SERIAL
 call :packsrc dcload-serial %DCLOAD_SER_OUTPUT_DIR%
 
 :finish
+echo %DATE% %TIME% > "%OFFLINE_STAMP_FILE%"
 call :log
 call :log =============================================================================
 call :log Process terminated.
