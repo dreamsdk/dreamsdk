@@ -405,7 +405,9 @@ set "KOS_INPUT_DIR=%OUTPUT_DIR%\lib-embedded\lib\kos"
 set "DREAMSDK_RUNNER_BIN32_FILE=%BIN_OUTPUT_DIR%\dreamsdk-runner.exe"
 set "DREAMSDK_RUNNER_BIN64_FILE=%BIN64_OUTPUT_DIR%\dreamsdk-runner.exe"
 %MKWRAPPERS% %KOS_INPUT_DIR% %DREAMSDK_RUNNER_BIN32_FILE% %SEVENZIP% %BIN_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+if errorlevel 1 goto err_wrappers
 %MKWRAPPERS% %KOS_INPUT_DIR% %DREAMSDK_RUNNER_BIN64_FILE% %SEVENZIP% %BIN64_PACKAGES_OUTPUT_DIR% >> %LOG_FILE% 2>&1
+if errorlevel 1 goto err_wrappers
 
 :processing_inno_setup
 call :log Generating Inno Setup context files ...
@@ -521,6 +523,11 @@ goto end
 
 :err_offline
 call :err Missing embedded/offline files. Please run the Offline script first.
+goto end
+
+:err_wrappers
+call :err Unable to generate the wrappers packages.
+call :log Please check the log file: "%LOG_FILE%"
 goto end
 
 :err_hhc_missing

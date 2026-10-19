@@ -90,7 +90,12 @@ def process_wrapper_files(input_kos_path, dreamsdk_runner, sevenzip_path, output
     
     print(f"Found {len(dc_arm_files)} dc-arm- files: {dc_arm_files}")
     print(f"Found {len(kos_files)} kos- files: {kos_files}")
-    
+
+    # Both archives are required by DreamSDK Manager
+    if not dc_arm_files or not kos_files:
+        print(f"Error: Missing dc-arm-/kos- wrapper files in {build_wrappers_dir}")
+        return False
+
     # Configuration file content
     cfg_content = "/opt/toolchains/dc/kos/utils/build_wrappers/"
     
