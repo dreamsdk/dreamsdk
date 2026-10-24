@@ -796,7 +796,10 @@ if "%_bit%+"=="64+" (
   set LAZCPU=x86_64
   set LAZOS=win64
 )
-%LAZBUILD% %_project% --build-mode="Release" --cpu=%LAZCPU% --operating-system=%LAZOS% %LAZDEBUG% >> %LOG_FILE% 2>&1
+rem Always rebuild everything: incremental builds don't track files embedded
+rem through .rc resources (e.g. the Code::Blocks Patcher packages), which would
+rem otherwise stay outdated in the binary
+%LAZBUILD% %_project% --build-all --build-mode="Release" --cpu=%LAZCPU% --operating-system=%LAZOS% %LAZDEBUG% >> %LOG_FILE% 2>&1
 if "$!errorlevel!"=="$0" goto checkbuildoutput
 call :err Failing Building Project: "%_name%".
 set _result=0
