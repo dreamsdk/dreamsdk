@@ -71,6 +71,10 @@ call :normalizepath CODEBLOCKS_PATCHER_INPUT_DIR
 call :checkdir FUNC_RESULT %CODEBLOCKS_PATCHER_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
 
+call :normalizepath VSCODE_EXTENSION_INPUT_DIR
+call :checkdir FUNC_RESULT %VSCODE_EXTENSION_INPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto err_input_dir
+
 call :normalizepath DOCUMENTATION_INPUT_DIR
 call :checkdir FUNC_RESULT %DOCUMENTATION_INPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto err_input_dir
@@ -206,6 +210,9 @@ if "+%FUNC_RESULT%"=="+0" goto end
 call :copybinary FUNC_RESULT cbhelper 32 %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
+call :copybinary FUNC_RESULT vshelper 32 %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
+if "+%FUNC_RESULT%"=="+0" goto end
+
 call :copybinary FUNC_RESULT postinst 32 %SETUP_HELPERS_INPUT_DIR% %SETUP_HELPERS_OUTPUT_DIR%
 if "+%FUNC_RESULT%"=="+0" goto end
 
@@ -238,6 +245,9 @@ set CODEBLOCKS_PATCHER_OUTPUT_DIR=%BIN_OUTPUT_DIR%\packages\ide\codeblocks
 if not exist %CODEBLOCKS_PATCHER_OUTPUT_DIR% mkdir %CODEBLOCKS_PATCHER_OUTPUT_DIR%
 
 call :copybinary FUNC_RESULT codeblocks-patcher 32 %CODEBLOCKS_PATCHER_INPUT_DIR% %CODEBLOCKS_PATCHER_OUTPUT_DIR% "--compress-resources=0"
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :packagevscodeextension FUNC_RESULT %BIN_OUTPUT_DIR%\packages\ide\vscode
 if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_binaries
@@ -289,6 +299,9 @@ set CODEBLOCKS_PATCHER64_OUTPUT_DIR=%BIN64_OUTPUT_DIR%\packages\ide\codeblocks
 if not exist %CODEBLOCKS_PATCHER64_OUTPUT_DIR% mkdir %CODEBLOCKS_PATCHER64_OUTPUT_DIR%
 
 call :copybinary FUNC_RESULT codeblocks-patcher 64 %CODEBLOCKS_PATCHER_INPUT_DIR% %CODEBLOCKS_PATCHER64_OUTPUT_DIR% "--compress-resources=0"
+if "+%FUNC_RESULT%"=="+0" goto end
+
+call :packagevscodeextension FUNC_RESULT %BIN64_OUTPUT_DIR%\packages\ide\vscode
 if "+%FUNC_RESULT%"=="+0" goto end
 
 :dreamsdk_binaries64
@@ -762,6 +775,21 @@ if not exist %_input% (
 :unpack_exit
 endlocal
 goto :EOF
+
+:packagevscodeextension
+rem Package the Visual Studio Code extension as "dreamsdk.vsix" in the
+rem target directory (no Node.js needed: see tools\package.ps1)
+setlocal EnableDelayedExpansion
+set _result=1
+set "_target=%~2"
+call :log * Packaging Visual Studio Code Extension ...
+if not exist "%_target%" mkdir "%_target%"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%VSCODE_EXTENSION_INPUT_DIR%\tools\package.ps1" -OutputFile "%_target%\dreamsdk.vsix" >> %LOG_FILE% 2>&1
+if not "$!errorlevel!"=="$0" set _result=0
+if not exist "%_target%\dreamsdk.vsix" set _result=0
+if "+%_result%"=="+0" call :err Failing Packaging Visual Studio Code Extension.
+endlocal & set "%~1=%_result%"
+goto :eof
 
 :copybinary
 setlocal EnableDelayedExpansion
