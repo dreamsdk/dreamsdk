@@ -28,3 +28,6 @@
 [submodule "setup/builder"]
 	path = setup/builder
 	url = https://github.com/dreamsdk/setup-generator
+[submodule "modules/ide/vscode"]
+	path = modules/ide/vscode
+	url = https://github.com/dreamsdk/vscode-extension
