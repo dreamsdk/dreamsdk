@@ -110,12 +110,14 @@ call :getver VERSION_KOS %KOS_INPUT_DIR%
 call :log * Version: %VERSION_KOS%
 call :remove_dir_tree %KOS_OUTPUT_DIR%
 call :copy %KOS_INPUT_DIR% %KOS_OUTPUT_DIR% %VERSION_KOS%
+if errorlevel 1 goto err_copy
 if exist %KOS_OUTPUT_DIR%\%KOS_ENVIRON% del %KOS_OUTPUT_DIR%\%KOS_ENVIRON%
 call :setver "KallistiOS ##version##" "KallistiOS %VERSION_KOS%" "%KOS_OUTPUT_DIR%"
 call :setver "relver='##version##'" "relver='%VERSION_KOS%'" "%KOS_OUTPUT_DIR%\kernel\arch\dreamcast\kernel"
 call :setver "##version##" "%VERSION_KOS%" "%KOS_OUTPUT_DIR%\doc"
 call :setver "##version##" "%VERSION_KOS%" "%KOS_OUTPUT_DIR%\kernel\arch\dreamcast\hardware\pvr"
 call :packsrc kallisti %KOS_OUTPUT_DIR%
+if errorlevel 1 goto err_pack
 goto kosports
 
 rem KallistiOS Ports
@@ -142,12 +144,14 @@ call :wait
 
 rem Copy everything
 call :copy %KOS_PORTS_INPUT_DIR% %KOS_PORTS_OUTPUT_DIR% %VERSION_KOS_PORTS%
+if errorlevel 1 goto err_copy
 call :patch %KOS_PORTS_OUTPUT_DIR% %KOS_PORTS_PATCH_DIR%\offline.diff
 call :patchreverse %KOS_PORTS_OUTPUT_DIR% %KOS_PORTS_PATCH_DIR%\fetch.diff
 call :setver "kos-ports ##version##" "kos-ports %VERSION_KOS_PORTS%" "%KOS_PORTS_OUTPUT_DIR%"
 call :setver "KallistiOS ##version##" "KallistiOS %VERSION_KOS_PORTS%" "%KOS_PORTS_OUTPUT_DIR%"
 call :setver "KOS ##version##" "KOS %VERSION_KOS_PORTS%" "%KOS_PORTS_OUTPUT_DIR%"
 call :packsrc kallisti-ports %KOS_PORTS_OUTPUT_DIR%
+if errorlevel 1 goto err_pack
 goto dcload
 
 rem Dreamcast-Tool
@@ -163,7 +167,9 @@ call :getver VERSION_DCLOAD_IP %DCLOAD_IP_INPUT_DIR%
 call :log  Version: %VERSION_DCLOAD_IP%
 call :remove_dir_tree %DCLOAD_IP_OUTPUT_DIR%
 call :copy %DCLOAD_IP_INPUT_DIR% %DCLOAD_IP_OUTPUT_DIR% %VERSION_DCLOAD_IP%
+if errorlevel 1 goto err_copy
 call :packsrc dcload-ip %DCLOAD_IP_OUTPUT_DIR%
+if errorlevel 1 goto err_pack
 
 rem Dreamcast-Tool Serial
 :dcload_serial
@@ -173,7 +179,9 @@ call :getver VERSION_DCLOAD_SERIAL %DCLOAD_SER_INPUT_DIR%
 call :log * Version: %VERSION_DCLOAD_SERIAL%
 call :remove_dir_tree %DCLOAD_SER_OUTPUT_DIR%
 call :copy %DCLOAD_SER_INPUT_DIR% %DCLOAD_SER_OUTPUT_DIR% %VERSION_DCLOAD_SERIAL%
+if errorlevel 1 goto err_copy
 call :packsrc dcload-serial %DCLOAD_SER_OUTPUT_DIR%
+if errorlevel 1 goto err_pack
 
 :finish
 echo %DATE% %TIME% > "%OFFLINE_STAMP_FILE%"
@@ -227,6 +235,16 @@ call :log The installation referenced by DREAMSDK_HOME appears to be missing or 
 call :log Directory: "%DREAMSDK_HOME%"
 goto end
 
+:err_copy
+call :err Failed to copy the sources to the output directory.
+call :log See "%LOG_FILE%" for details.
+goto end
+
+:err_pack
+call :err Failed to create the source package.
+call :log See "%LOG_FILE%" for details.
+goto end
+
 :err_fetch_failed
 call :err Failed to download the KallistiOS Ports sources.
 call :log A working DreamSDK installation is required to run this script.
@@ -263,7 +281,10 @@ echo .git\ > %EXCLUDE_FILE%
 echo .svn\ >> %EXCLUDE_FILE%
 rem if exist "%EXCLUDE_FILE%" attrib +h %EXCLUDE_FILE%
 xcopy %1\* %2 /exclude:%EXCLUDE_FILE% /s /i /y >> %LOG_FILE% 2>&1
+set _copy_result=%ERRORLEVEL%
 if exist %EXCLUDE_FILE% del %EXCLUDE_FILE%
+rem Any non-zero code is a failure (1 is "no files found")
+if not "%_copy_result%"=="0" exit /b 1
 echo %3 > %2\OFFLINE
 goto :EOF
 
@@ -320,7 +341,9 @@ set _package_name=%1
 set _source_dir=%2
 set _target_dir=%3
 %SEVENZIP% a -t7z -mx%SEVENZIP_COMPRESSION_LEVEL% "%_target_dir%\%_package_name%" "%_source_dir%\*" >> %LOG_FILE% 2>&1
-endlocal
+rem Any non-zero code is a failure (1 is a warning, e.g., some files were skipped)
+set _compress_result=%ERRORLEVEL%
+endlocal & if not "%_compress_result%"=="0" exit /b 1
 goto :EOF
 
 :git
