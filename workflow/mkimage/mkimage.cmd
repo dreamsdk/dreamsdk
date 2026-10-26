@@ -30,7 +30,7 @@ for /f "tokens=*" %%i in (%CONFIG_FILE%) do (
   )
 )
 
-rem Initilization
+rem Setup source directory
 set SETUP_SOURCE_DIR=%SETUP_INPUT_DIR%\bin
 
 rem Utilities
@@ -61,13 +61,16 @@ if not exist %IMAGE_OUTPUT_DIR% mkdir %IMAGE_OUTPUT_DIR%
 
 set ZIP_OUTPUT_DIR=%BASE_DIR%\.zip_root
 
-:check_tools
-if not exist %MKISOFS% goto err_binary_mkisofs
-if not exist %CDI4DC% goto err_binary_cdi4dc
-
+:check_generation
 set GENERATE_CDI_IMAGES=0
 if "%GENERATE_DREAMCAST_TOOL_SERIAL_IMAGE%+"=="1+" set GENERATE_CDI_IMAGES=1
 if "%GENERATE_DREAMCAST_TOOL_INTERNET_PROTOCOL_IMAGE%+"=="1+" set GENERATE_CDI_IMAGES=1
+if not "%GENERATE_ISO_IMAGE%+"=="1+" if not "%GENERATE_ZIP_PACKAGE%+"=="1+" if not "%GENERATE_CDI_IMAGES%+"=="1+" goto err_nothing_to_generate
+
+:check_mkisofs
+rem Make ISO Image File System is needed for generating the ISO and CDI images
+if not "%GENERATE_ISO_IMAGE%+"=="1+" if not "%GENERATE_CDI_IMAGES%+"=="1+" goto check_sevenzip
+if not exist %MKISOFS% goto err_binary_mkisofs
 
 :check_sevenzip
 rem 7-Zip is only needed for generating the ZIP package and the CDI images
@@ -76,8 +79,9 @@ call :resolvebinary FUNC_RESULT SEVENZIP
 if "+%FUNC_RESULT%"=="+0" goto err_binary_sevenzip
 
 :check_cdi_tools
-rem Git and UPX are only needed for generating the CDI images
+rem CDI4DC, Git and UPX are only needed for generating the CDI images
 if not "%GENERATE_CDI_IMAGES%+"=="1+" goto check_python
+if not exist %CDI4DC% goto err_binary_cdi4dc
 call :resolvebinary FUNC_RESULT GIT
 if "+%FUNC_RESULT%"=="+0" goto err_binary_git
 call :resolvebinary FUNC_RESULT UPX32
@@ -100,6 +104,7 @@ rem Do the magic!
 pushd .
 
 :prepare_disc_root
+rem The disc root is used by the ISO image, the ZIP package and the CDI images
 call :copy %SETUP_SOURCE_DIR% %IMAGE_OUTPUT_DIR%
 
 :extract_versioninfo
@@ -123,7 +128,7 @@ rem Getting the current timestamp
 call :get_timestamp TIMESTAMP
 
 :setting_up_parameters
-rem Settings for final Setup image...
+rem Settings for the final images...
 set SYSID=Win32
 set PREPARER=%PACKAGE_NAME% Setup Generator
 set APPID=%PACKAGE_NAME% %PACKAGE_RELEASE_VERSION%
@@ -143,6 +148,7 @@ set SETUP_OUTPUT_ZIP_PATH=%SETUP_OUTPUT_DIR%\%SETUP_OUTPUT_ZIP_FILE%
 set DISC_ID_DIZ=%IMAGE_OUTPUT_DIR%\disc_id.diz
 
 :check_iso
+if not "%GENERATE_ISO_IMAGE%+"=="1+" goto check_zip
 if exist %SETUP_OUTPUT_ISO_PATH% goto err_generated_iso
 
 :check_zip
@@ -168,11 +174,11 @@ if "%errorlevel%+"=="0+" goto generate_iso
 goto err_generation_zip
 
 :generate_iso
-rem Generate Setup program
+if not "%GENERATE_ISO_IMAGE%+"=="1+" goto generate_cdi_dcload_ip
 call :log Generating: ISO Image
 %MKISOFS% -V "%VOLUMEID%" -sysid "%SYSID%" -publisher "%PUBLISHER%" -preparer "%PREPARER%" -appid "%APPID%" -duplicates-once -joliet -rational-rock -full-iso9660-filenames -o "%SETUP_OUTPUT_ISO_PATH%" "%IMAGE_OUTPUT_DIR%" >> %LOG_FILE% 2>&1
 if "%errorlevel%+"=="0+" goto generate_cdi_dcload_ip
-goto err_generation
+goto err_generation_iso
 
 :generate_cdi_dcload_ip
 if "%GENERATE_DREAMCAST_TOOL_INTERNET_PROTOCOL_IMAGE%+"=="1+" (
@@ -245,7 +251,12 @@ call :err UPX was not found.
 call :log File: "%UPX32%"
 goto end
 
-:err_generation
+:err_nothing_to_generate
+call :err Nothing to generate, all the packages are disabled.
+call :log File: "%CONFIG_FILE%"
+goto end
+
+:err_generation_iso
 call :err Unable to generate the ISO file.
 call :log File: "%SETUP_OUTPUT_ISO_FILE%"
 goto end
